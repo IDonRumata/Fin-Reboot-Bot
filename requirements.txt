@@ -1,0 +1,16 @@
+# Telegram Bot Framework
+aiogram==3.15.0
+# Async PostgreSQL
+asyncpg==0.30.0
+sqlalchemy[asyncio]==2.0.36
+alembic==1.14.1
+# Redis (FSM + cache)
+redis==5.2.1
+# Settings
+pydantic-settings==2.7.1
+# Scheduler
+apscheduler==3.10.4
+# Webhook server & HTTP client
+aiohttp==3.10.11
+# Logging
+structlog==24.4.0

@@ -1,0 +1,41 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+
+# Docker volumes (local data)
+postgres_data/
+redis_data/
+nocodb_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp files
+temp_docx.zip
+temp_docx_extract/
+*.docx
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
