@@ -85,6 +85,7 @@ async def cmd_start(message: types.Message, session: AsyncSession) -> None:
                 text="📉 Финансовый рентген",
                 url=settings.webapp_tracker_url,
             )],
+            [InlineKeyboardButton(text="📝 Шпаргалка по налогам", callback_data="tax_cheatsheet")],
             [InlineKeyboardButton(text="🆘 Поддержка", callback_data="support")],
             [InlineKeyboardButton(text="📜 Оферта", callback_data="oferta")],
         ]

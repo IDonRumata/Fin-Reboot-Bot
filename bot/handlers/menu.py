@@ -24,6 +24,7 @@ MENU_KEYBOARD = InlineKeyboardMarkup(
             text="📉 Финансовый рентген",
             url=settings.webapp_tracker_url,
         )],
+        [InlineKeyboardButton(text="📝 Шпаргалка по налогам", callback_data="tax_cheatsheet")],
         [InlineKeyboardButton(text="🆘 Поддержка", callback_data="support")],
         [InlineKeyboardButton(text="📜 Оферта", callback_data="oferta")],
     ]
@@ -75,6 +76,46 @@ async def cb_about(callback: types.CallbackQuery) -> None:
     )
     if callback.message:
         await callback.message.answer(ABOUT_TEXT, reply_markup=keyboard)  # type: ignore[union-attr]
+
+
+TAX_CHEATSHEET_KEYBOARD = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(
+            text="🇧🇾 Беларусь",
+            url="https://docs.google.com/document/d/11naEiD4vSJvzFivYtB_PBpL6JE6Y3hc231tkz6WZQGs/edit?tab=t.0#heading=h.p8axpjuwagqo",
+        )],
+        [InlineKeyboardButton(
+            text="🇷🇺 Россия",
+            url="https://docs.google.com/document/d/1zuEgfUV89ndfPAOR8xLbFB1vB0hf5vOUWfT-OW_J_Rs/edit?tab=t.0#heading=h.xkpy0wuymb5s",
+        )],
+        [InlineKeyboardButton(
+            text="🇰🇿 Казахстан",
+            url="https://docs.google.com/document/d/1r8r6YXlWfw4xlRYwulDqZ-dskrPK7oUxv9ixguSagOU/edit?tab=t.0#heading=h.k0d6w0cvc7xp",
+        )],
+        [InlineKeyboardButton(
+            text="🇺🇦 Украина",
+            url="https://docs.google.com/document/d/1MBZa0vhJdrOuw71Lt854aw34Pfh0BhSOKA3HHgWCLuU/edit?tab=t.0#heading=h.l582nagt5xcn",
+        )],
+        [InlineKeyboardButton(
+            text="🇵🇱 Польша",
+            url="https://docs.google.com/document/d/1tDsmIN5-eiLG3RDOH1R9GI6KDLGBvdoCBFjsSMqE_oU/edit?tab=t.0#heading=h.xb43zrl8o7t0",
+        )],
+        [InlineKeyboardButton(text="🔙 Меню", callback_data="menu")],
+    ]
+)
+
+
+@router.callback_query(F.data == "tax_cheatsheet")
+async def cb_tax_cheatsheet(callback: types.CallbackQuery) -> None:
+    await callback.answer()
+    text = (
+        "━━━━━━━━━━━━━━━━━━━\n"
+        "📝 <b>Шпаргалка по налогам</b>\n"
+        "━━━━━━━━━━━━━━━━━━━\n\n"
+        "Выберите вашу страну, чтобы открыть шпаргалку:"
+    )
+    if callback.message:
+        await callback.message.answer(text, reply_markup=TAX_CHEATSHEET_KEYBOARD)  # type: ignore[union-attr]
 
 
 @router.callback_query(F.data == "support")
