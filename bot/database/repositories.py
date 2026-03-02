@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Sequence
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -271,8 +272,12 @@ async def get_users_needing_next_day(session: AsyncSession) -> list[dict]:
        (e.g. admin changed payment_status to 'paid' in NocoDB).
     2. Day N+1 progression: user completed day N and enough time has passed.
     """
-    now = datetime.now(timezone.utc)
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    MINSK_TZ = ZoneInfo("Europe/Minsk")
+    SEND_HOUR = 9  # отправка следующего дня не раньше 9:00 по Минску
+
+    now_utc = datetime.now(timezone.utc)
+    now_minsk = now_utc.astimezone(MINSK_TZ)
+    today_start_minsk = now_minsk.replace(hour=0, minute=0, second=0, microsecond=0)
     results: list[dict] = []
 
     stmt = (
@@ -311,8 +316,9 @@ async def get_users_needing_next_day(session: AsyncSession) -> list[dict]:
                     results.append({"user": user, "day": next_day, "reason": "force_next_day"})
                     break
                 if completed_at:
-                    completed_day_start = completed_at.replace(hour=0, minute=0, second=0, microsecond=0)
-                    if today_start > completed_day_start:
+                    completed_minsk = completed_at.replace(tzinfo=timezone.utc).astimezone(MINSK_TZ)
+                    completed_day_start = completed_minsk.replace(hour=0, minute=0, second=0, microsecond=0)
+                    if today_start_minsk > completed_day_start and now_minsk.hour >= SEND_HOUR:
                         results.append({"user": user, "day": next_day, "reason": "calendar_day"})
                         break
 
