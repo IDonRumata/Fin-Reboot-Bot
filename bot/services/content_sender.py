@@ -217,6 +217,15 @@ async def send_day_block(
             return
 
 
+DAY_GREETINGS = {
+    1: "Сегодня мы начинаем наш путь к финансовой свободе! 🚀",
+    2: "Продолжаем! Сегодня — стратегия защиты денег 🛡",
+    3: "Отлично, ты уже на полпути! Сегодня — криптокошелёк ₿",
+    4: "Почти у цели! Сегодня — брокерский счёт 📈",
+    5: "Финальный рывок! Собираем портфель 🏆",
+}
+
+
 async def send_full_day(
     bot: Bot,
     session: AsyncSession,
@@ -225,4 +234,18 @@ async def send_full_day(
     day: int,
 ) -> None:
     """Send ONLY the first block of a day (further blocks are gated by continue-buttons)."""
+    # Personalized greeting at the start of each day
+    user = await repo.get_user_by_telegram_id(session, telegram_id)
+    first_name = user.first_name if user else None
+    name = first_name or "друг"
+    greeting = DAY_GREETINGS.get(day, "")
+    text = f"👋 <b>{name}, привет!</b>\n\n📅 <b>День {day}.</b> {greeting}"
+    try:
+        await bot.send_message(chat_id=telegram_id, text=text, parse_mode="HTML")
+        await asyncio.sleep(2)
+    except TelegramForbiddenError:
+        raise
+    except TelegramAPIError as exc:
+        logger.error("Failed to send greeting to %s: %s", telegram_id, exc)
+
     await send_day_block(bot, session, telegram_id, user_id, day, block_num=1)
