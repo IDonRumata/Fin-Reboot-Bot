@@ -35,10 +35,10 @@ services:
   nocodb:
     image: nocodb/nocodb:latest
     restart: unless-stopped
-    environment:
-      NC_DB: "pg://postgres:5432?u=finbot&p=finbot_pass&d=finbot_db"
     ports:
       - "127.0.0.1:8081:8080"
+    volumes:
+      - nc_data:/usr/app/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,3 +62,4 @@ services:
 
 volumes:
   pgdata:
+  nc_data:
