@@ -136,7 +136,6 @@ async def cmd_test_send(message: types.Message, session: AsyncSession, bot: Bot)
 
     await message.answer(f"🚀 Отправляю день {day} пользователю {telegram_id}...")
     await send_full_day(bot, session, telegram_id, user.id, day)
-    await message.answer("✅ Отправлено!")
 
 
 @router.message(Command("confirm_payment"))
@@ -303,9 +302,10 @@ async def cmd_backup(message: types.Message, bot: Bot) -> None:
     await message.answer("📦 Создаю бэкап базы данных...")
 
     from bot.workers.backup import create_and_send_backup
-    await create_and_send_backup(bot, send_to_chat_id=message.from_user.id)
+    success = await create_and_send_backup(bot, send_to_chat_id=message.from_user.id)
 
-    await message.answer("✅ Бэкап создан и отправлен!")
+    if success:
+        await message.answer("✅ Бэкап создан и отправлен!")
 
 
 async def _import_csv(session: AsyncSession, path: Path) -> int:

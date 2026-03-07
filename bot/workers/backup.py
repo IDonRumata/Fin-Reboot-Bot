@@ -24,8 +24,8 @@ BACKUP_DIR = Path("/app/backups")
 MAX_BACKUPS = 7
 
 
-async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -> None:
-    """Create a pg_dump backup and send it to admin via Telegram."""
+async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -> bool:
+    """Create a pg_dump backup and send it. Returns True if successful."""
     try:
         BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -42,7 +42,11 @@ async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -
         user_pass, host_db = clean_url.split("@", 1)
         db_user, db_pass = user_pass.split(":", 1)
         host_port, db_name = host_db.split("/", 1)
-        db_host, db_port = host_port.split(":", 1)
+        if ":" in host_port:
+            db_host, db_port = host_port.split(":", 1)
+        else:
+            db_host = host_port
+            db_port = "5432"
 
         # Run pg_dump as subprocess
         env = os.environ.copy()
@@ -64,11 +68,11 @@ async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -
 
         if process.returncode != 0:
             logger.error("pg_dump failed: %s", stderr.decode())
-            return
+            raise Exception(f"pg_dump error: {stderr.decode()}")
 
         if not stdout:
             logger.error("pg_dump returned empty output")
-            return
+            raise Exception("pg_dump returned empty output")
 
         # Compress with gzip
         with gzip.open(gz_path, "wb") as f:
@@ -107,18 +111,24 @@ async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -
 
         # Clean up old backups (keep last MAX_BACKUPS)
         _cleanup_old_backups()
+        return True
 
     except Exception as exc:
         logger.error("Backup failed: %s", exc, exc_info=True)
         # Try to notify admin about failure
-        for admin_id in settings.admin_ids:
+        target_chats = set(settings.admin_ids)
+        if send_to_chat_id:
+            target_chats.add(send_to_chat_id)
+            
+        for chat_id in target_chats:
             try:
                 await bot.send_message(
-                    chat_id=admin_id,
+                    chat_id=chat_id,
                     text=f"❌ <b>Ошибка бэкапа БД:</b>\n<code>{exc}</code>",
                 )
             except Exception:
                 pass
+        return False
 
 
 def _cleanup_old_backups() -> None:
