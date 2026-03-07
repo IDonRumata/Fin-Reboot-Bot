@@ -43,6 +43,16 @@ services:
       postgres:
         condition: service_healthy
 
+  # ── Adminer (lightweight DB viewer) ─────────────────────
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # ── Bot ─────────────────────────────────────────────────
   bot:
     build: .
