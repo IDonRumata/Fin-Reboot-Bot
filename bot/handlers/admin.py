@@ -303,7 +303,7 @@ async def cmd_backup(message: types.Message, bot: Bot) -> None:
     await message.answer("📦 Создаю бэкап базы данных...")
 
     from bot.workers.backup import create_and_send_backup
-    await create_and_send_backup(bot)
+    await create_and_send_backup(bot, send_to_chat_id=message.from_user.id)
 
     await message.answer("✅ Бэкап создан и отправлен!")
 

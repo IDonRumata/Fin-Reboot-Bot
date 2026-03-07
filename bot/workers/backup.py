@@ -24,7 +24,7 @@ BACKUP_DIR = Path("/app/backups")
 MAX_BACKUPS = 7
 
 
-async def create_and_send_backup(bot: Bot) -> None:
+async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -> None:
     """Create a pg_dump backup and send it to admin via Telegram."""
     try:
         BACKUP_DIR.mkdir(parents=True, exist_ok=True)
@@ -87,16 +87,23 @@ async def create_and_send_backup(bot: Bot) -> None:
             f"psql -U finbot -d finbot_db < {sql_filename}</i>"
         )
 
-        for admin_id in settings.admin_ids:
+        # Determine who to send the backup to
+        target_chats = set(settings.admin_ids)
+        if send_to_chat_id:
+            target_chats.add(send_to_chat_id)
+
+        for chat_id in target_chats:
             try:
+                # We need to recreate the BufferedInputFile for each send
+                doc = BufferedInputFile(backup_bytes, filename=gz_filename)
                 await bot.send_document(
-                    chat_id=admin_id,
+                    chat_id=chat_id,
                     document=doc,
                     caption=caption,
                 )
-                logger.info("Backup sent to admin %s", admin_id)
+                logger.info("Backup sent to chat %s", chat_id)
             except Exception as exc:
-                logger.error("Failed to send backup to admin %s: %s", admin_id, exc)
+                logger.error("Failed to send backup to chat %s: %s", chat_id, exc)
 
         # Clean up old backups (keep last MAX_BACKUPS)
         _cleanup_old_backups()
