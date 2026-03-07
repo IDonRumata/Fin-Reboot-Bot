@@ -372,3 +372,122 @@ async def get_users_needing_reminder(session: AsyncSession) -> list[dict]:
                     break  # one reminder per user per run
 
     return results
+
+
+# ──────────────────────── Quiz ────────────────────────────────
+
+
+async def save_quiz_result(
+    session: AsyncSession,
+    telegram_id: int,
+    answers: dict,
+    score: int,
+    user_type: str,
+    name: str,
+) -> User | None:
+    """Save quiz results for a user."""
+    user = await get_user_by_telegram_id(session, telegram_id)
+    if not user:
+        return None
+    user.quiz_answers = answers
+    user.quiz_score = score
+    user.quiz_user_type = user_type
+    user.quiz_name_entered = name
+    user.quiz_completed_at = datetime.now(timezone.utc)
+    user.quiz_followup_step = 0
+    user.quiz_followup_last_at = datetime.now(timezone.utc)
+    await session.commit()
+    return user
+
+
+async def get_quiz_followup_users(session: AsyncSession) -> list[User]:
+    """Find users who completed the quiz but haven't paid — for follow-up chain."""
+    stmt = (
+        select(User)
+        .where(
+            and_(
+                User.quiz_completed_at.isnot(None),
+                User.payment_status != PaymentStatus.paid,
+                User.quiz_followup_step < 3,
+                User.status == UserStatus.active,
+            )
+        )
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def update_followup_step(
+    session: AsyncSession, user_id: int, step: int
+) -> None:
+    """Update follow-up chain step for a user."""
+    user = await session.get(User, user_id)
+    if not user:
+        return
+    user.quiz_followup_step = step
+    user.quiz_followup_last_at = datetime.now(timezone.utc)
+    await session.commit()
+
+
+async def get_quiz_stats(session: AsyncSession) -> dict:
+    """Get quiz statistics for /stats command."""
+    from sqlalchemy import func as sa_func
+
+    total_quiz = (await session.execute(
+        select(sa_func.count(User.id)).where(User.quiz_completed_at.isnot(None))
+    )).scalar() or 0
+
+    type_a = (await session.execute(
+        select(sa_func.count(User.id)).where(
+            and_(User.quiz_completed_at.isnot(None), User.quiz_user_type == "A")
+        )
+    )).scalar() or 0
+
+    type_b = (await session.execute(
+        select(sa_func.count(User.id)).where(
+            and_(User.quiz_completed_at.isnot(None), User.quiz_user_type == "B")
+        )
+    )).scalar() or 0
+
+    type_c = (await session.execute(
+        select(sa_func.count(User.id)).where(
+            and_(User.quiz_completed_at.isnot(None), User.quiz_user_type == "C")
+        )
+    )).scalar() or 0
+
+    quiz_purchased = (await session.execute(
+        select(sa_func.count(User.id)).where(
+            and_(
+                User.quiz_completed_at.isnot(None),
+                User.payment_status == PaymentStatus.paid,
+            )
+        )
+    )).scalar() or 0
+
+    return {
+        "total": total_quiz,
+        "type_a": type_a,
+        "type_b": type_b,
+        "type_c": type_c,
+        "purchased": quiz_purchased,
+    }
+
+
+async def get_all_quiz_users(session: AsyncSession) -> Sequence[User]:
+    """Get all users who completed the quiz — for /export and /broadcast."""
+    stmt = (
+        select(User)
+        .where(User.quiz_completed_at.isnot(None))
+        .order_by(User.quiz_completed_at.desc())
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def mark_user_blocked(session: AsyncSession, telegram_id: int) -> None:
+    """Mark user as blocked (they blocked the bot)."""
+    user = await get_user_by_telegram_id(session, telegram_id)
+    if user:
+        user.status = UserStatus.blocked
+        await session.commit()
+

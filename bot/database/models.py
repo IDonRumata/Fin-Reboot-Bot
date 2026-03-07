@@ -12,6 +12,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    JSON,
     String,
     Text,
     UniqueConstraint,
@@ -92,6 +93,21 @@ class User(Base):
 
     # Testing
     force_next_day: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
+    # Quiz fields
+    quiz_answers: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    quiz_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    quiz_user_type: Mapped[str | None] = mapped_column(String(1), nullable=True)
+    quiz_name_entered: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    quiz_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    quiz_followup_step: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0"
+    )
+    quiz_followup_last_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

@@ -27,9 +27,11 @@ from bot.handlers import (
     keywords,
     admin,
     fallback,
+    quiz,
 )
 from bot.workers.day_scheduler import check_and_send_next_day
 from bot.workers.reminders import check_and_send_reminders
+from bot.workers.quiz_followup import check_and_send_quiz_followups
 from bot.services.webhook import create_webhook_app
 
 logger = logging.getLogger(__name__)
@@ -76,6 +78,7 @@ async def main() -> None:
 
     # Register routers (order matters: first match wins)
     dp.include_router(admin.router)       # Admin first (commands with checks)
+    dp.include_router(quiz.router)        # Quiz FSM (before start!)
     dp.include_router(start.router)       # /start
     dp.include_router(menu.router)        # /menu, about, support
     dp.include_router(buy.router)         # buy, oferta, accept, payment
@@ -106,9 +109,17 @@ async def main() -> None:
         id="reminders",
         replace_existing=True,
     )
+    scheduler.add_job(
+        check_and_send_quiz_followups,
+        "interval",
+        minutes=15,
+        args=[bot],
+        id="quiz_followup",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
-        "Schedulers started: day_scheduler every %d min, reminders every %d hours.",
+        "Schedulers started: day_scheduler every %d min, reminders every %d hours, quiz_followup every 15 min.",
         settings.day_scheduler_interval_minutes,
         settings.reminder_interval_hours,
     )

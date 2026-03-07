@@ -1,15 +1,17 @@
-"""Admin commands: /admin, /sync, /test_send, /confirm_payment."""
+"""Admin commands: /admin, /sync, /test_send, /confirm_payment, /stats, /export, /broadcast."""
 
 from __future__ import annotations
 
 import csv
+import io
 import logging
 from io import StringIO
 from pathlib import Path
 
 from aiogram import Router, types, Bot
+from aiogram.exceptions import TelegramForbiddenError, TelegramAPIError
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboardMarkup
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.core.config import settings
@@ -38,7 +40,9 @@ async def cmd_admin(message: types.Message) -> None:
         "/sync – Загрузить контент из CSV файла\n"
         "/test_send <code>telegram_id day</code> – Тестовая отправка контента\n"
         "/confirm_payment <code>telegram_id</code> – Подтвердить оплату вручную\n"
-        "/stats – Статистика бота"
+        "/stats – Статистика бота\n"
+        "/export – Выгрузить данные квиза в CSV\n"
+        "/broadcast <code>текст</code> – Рассылка всем прошедшим квиз"
     )
     await message.answer(text)
 
@@ -78,6 +82,14 @@ async def cmd_stats(message: types.Message, session: AsyncSession) -> None:
 
     conversion = f"{paid/total*100:.1f}%" if total > 0 else "0%"
 
+    # Quiz stats
+    quiz_stats = await repo.get_quiz_stats(session)
+    quiz_conv = (
+        f"{quiz_stats['purchased']/quiz_stats['total']*100:.1f}%"
+        if quiz_stats["total"] > 0
+        else "0%"
+    )
+
     text = (
         "📊 <b>Статистика</b>\n\n"
         f"👤 Всего: {total}\n"
@@ -87,7 +99,14 @@ async def cmd_stats(message: types.Message, session: AsyncSession) -> None:
         "\n".join(day_stats) +
         f"\n\n<b>Лиды:</b>\n"
         f"  🏠 АРЕНДА: {arenda}\n"
-        f"  🤖 РОБОТ: {robot}"
+        f"  🤖 РОБОТ: {robot}\n\n"
+        f"<b>Квиз:</b>\n"
+        f"  📝 Прошли квиз: {quiz_stats['total']}\n"
+        f"  🛡 Тип A (осторожный): {quiz_stats['type_a']}\n"
+        f"  🚀 Тип B (готов): {quiz_stats['type_b']}\n"
+        f"  📊 Тип C (инвестор): {quiz_stats['type_c']}\n"
+        f"  💰 Купили после квиза: {quiz_stats['purchased']}\n"
+        f"  📈 Конверсия квиз→покупка: {quiz_conv}"
     )
     await message.answer(text)
 
@@ -189,6 +208,91 @@ async def cmd_sync(message: types.Message, session: AsyncSession) -> None:
         await message.answer(f"❌ Ошибка: {exc}")
 
 
+@router.message(Command("export"))
+async def cmd_export(message: types.Message, session: AsyncSession) -> None:
+    """Export quiz users data as CSV file."""
+    if not message.from_user or not _is_admin(message.from_user.id):
+        return
+
+    users = await repo.get_all_quiz_users(session)
+    if not users:
+        await message.answer("📭 Нет пользователей, прошедших квиз.")
+        return
+
+    # Build CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "telegram_id", "username", "first_name", "quiz_name",
+        "user_type", "score", "utm_source", "purchased",
+        "completed_at",
+    ])
+    for u in users:
+        writer.writerow([
+            u.telegram_id,
+            u.username or "",
+            u.first_name or "",
+            u.quiz_name_entered or "",
+            u.quiz_user_type or "",
+            u.quiz_score or 0,
+            u.utm_source or "",
+            "yes" if u.payment_status == PaymentStatus.paid else "no",
+            u.quiz_completed_at.strftime("%Y-%m-%d %H:%M") if u.quiz_completed_at else "",
+        ])
+
+    csv_bytes = output.getvalue().encode("utf-8-sig")
+    doc = BufferedInputFile(csv_bytes, filename="quiz_users.csv")
+    await message.answer_document(doc, caption=f"📊 Экспорт: {len(users)} пользователей")
+
+
+@router.message(Command("broadcast"))
+async def cmd_broadcast(message: types.Message, session: AsyncSession, bot: Bot) -> None:
+    """Broadcast a message to all quiz completers."""
+    if not message.from_user or not _is_admin(message.from_user.id):
+        return
+
+    # Extract broadcast text (everything after /broadcast)
+    text = (message.text or "").partition(" ")[2].strip()
+    if not text:
+        await message.answer(
+            "Использование: /broadcast <code>текст сообщения</code>\n\n"
+            "Текст будет отправлен всем, кто прошёл квиз."
+        )
+        return
+
+    users = await repo.get_all_quiz_users(session)
+    if not users:
+        await message.answer("📭 Нет пользователей для рассылки.")
+        return
+
+    await message.answer(f"📤 Начинаю рассылку {len(users)} пользователям...")
+
+    sent = 0
+    failed = 0
+    blocked = 0
+
+    for u in users:
+        try:
+            await bot.send_message(chat_id=u.telegram_id, text=text)
+            sent += 1
+        except TelegramForbiddenError:
+            blocked += 1
+            await repo.mark_user_blocked(session, u.telegram_id)
+        except TelegramAPIError:
+            failed += 1
+
+        # Telegram rate limit: ~30 msg/sec
+        import asyncio
+        await asyncio.sleep(0.05)
+
+    await message.answer(
+        f"✅ Рассылка завершена!\n\n"
+        f"📨 Отправлено: {sent}\n"
+        f"🚫 Заблокировали: {blocked}\n"
+        f"❌ Ошибки: {failed}"
+    )
+
+
 async def _import_csv(session: AsyncSession, path: Path) -> int:
     """Parse CSV and upsert content_blocks."""
     from sqlalchemy import delete
@@ -221,3 +325,4 @@ async def _import_csv(session: AsyncSession, path: Path) -> int:
 
     await session.commit()
     return count
+

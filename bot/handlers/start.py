@@ -6,6 +6,7 @@ import logging
 
 from aiogram import Router, types
 from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -52,12 +53,29 @@ WELCOME_TEXT = (
 
 
 @router.message(CommandStart())
-async def cmd_start(message: types.Message, session: AsyncSession) -> None:
+async def cmd_start(message: types.Message, session: AsyncSession, state: FSMContext) -> None:
     if not message.from_user:
         return
 
-    # Parse deep link UTM
+    # Parse deep link
     args = message.text.split(maxsplit=1)[1] if message.text and " " in message.text else None
+
+    # ── Quiz funnel: deep link starts with quiz_ ──
+    if args and args.startswith("quiz_"):
+        utm_source = args  # e.g. "quiz_instagram"
+        await repo.get_or_create_user(
+            session,
+            telegram_id=message.from_user.id,
+            username=message.from_user.username,
+            first_name=message.from_user.first_name,
+            last_name=message.from_user.last_name,
+            utm_source=utm_source,
+        )
+        from bot.handlers.quiz import start_quiz
+        await start_quiz(message, state)
+        return
+
+    # ── Standard flow ──
     utm = _parse_deep_link(args)
 
     # Register/update user
@@ -92,4 +110,5 @@ async def cmd_start(message: types.Message, session: AsyncSession) -> None:
     )
 
     await message.answer(WELCOME_TEXT, reply_markup=keyboard)
+
 

@@ -30,7 +30,7 @@ def _is_real_file_id(file_id: str | None) -> bool:
     if fid.startswith("["):
         return False
     # Allow local files
-    if fid.endswith(".png") or fid.endswith(".jpg"):
+    if fid.endswith(".png") or fid.endswith(".jpg") or fid.endswith(".mp4"):
         return True
     if len(fid) < 20:
         return False
@@ -148,9 +148,18 @@ async def send_single_block(
                 if not _is_real_file_id(file_id):
                     logger.warning("Skipping video_note block %s — no real file_id", block.id)
                     return False
+
+                video_note_obj = file_id
+                if file_id.endswith(".mp4"):
+                    local_path = f"/app/slides/{file_id}"
+                    if not os.path.exists(local_path):
+                        logger.warning("Local video_note not found: %s", local_path)
+                        return False
+                    video_note_obj = FSInputFile(local_path)
+
                 await bot.send_video_note(
                     chat_id=chat_id,
-                    video_note=file_id,
+                    video_note=video_note_obj,
                 )
 
             case ContentType.voice:
