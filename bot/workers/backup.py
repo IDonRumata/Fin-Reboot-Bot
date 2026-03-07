@@ -86,9 +86,7 @@ async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -
         doc = BufferedInputFile(backup_bytes, filename=gz_filename)
         caption = (
             f"📦 <b>Бэкап БД</b> — {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
-            f"📏 Размер: {file_size_kb:.1f} KB\n\n"
-            f"<i>Восстановление: gunzip {gz_filename} && "
-            f"psql -U finbot -d finbot_db < {sql_filename}</i>"
+            f"📏 Размер: {file_size_kb:.1f} KB"
         )
 
         # Determine who to send the backup to
