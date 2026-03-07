@@ -32,6 +32,7 @@ from bot.handlers import (
 from bot.workers.day_scheduler import check_and_send_next_day
 from bot.workers.reminders import check_and_send_reminders
 from bot.workers.quiz_followup import check_and_send_quiz_followups
+from bot.workers.backup import create_and_send_backup
 from bot.services.webhook import create_webhook_app
 
 logger = logging.getLogger(__name__)
@@ -115,6 +116,15 @@ async def main() -> None:
         minutes=15,
         args=[bot],
         id="quiz_followup",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        create_and_send_backup,
+        "cron",
+        hour=3,
+        minute=0,
+        args=[bot],
+        id="daily_backup",
         replace_existing=True,
     )
     scheduler.start()

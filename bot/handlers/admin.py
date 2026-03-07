@@ -42,7 +42,8 @@ async def cmd_admin(message: types.Message) -> None:
         "/confirm_payment <code>telegram_id</code> – Подтвердить оплату вручную\n"
         "/stats – Статистика бота\n"
         "/export – Выгрузить данные квиза в CSV\n"
-        "/broadcast <code>текст</code> – Рассылка всем прошедшим квиз"
+        "/broadcast <code>текст</code> – Рассылка всем прошедшим квиз\n"
+        "/backup – Создать бэкап базы данных"
     )
     await message.answer(text)
 
@@ -291,6 +292,20 @@ async def cmd_broadcast(message: types.Message, session: AsyncSession, bot: Bot)
         f"🚫 Заблокировали: {blocked}\n"
         f"❌ Ошибки: {failed}"
     )
+
+
+@router.message(Command("backup"))
+async def cmd_backup(message: types.Message, bot: Bot) -> None:
+    """Manually trigger a database backup."""
+    if not message.from_user or not _is_admin(message.from_user.id):
+        return
+
+    await message.answer("📦 Создаю бэкап базы данных...")
+
+    from bot.workers.backup import create_and_send_backup
+    await create_and_send_backup(bot)
+
+    await message.answer("✅ Бэкап создан и отправлен!")
 
 
 async def _import_csv(session: AsyncSession, path: Path) -> int:
