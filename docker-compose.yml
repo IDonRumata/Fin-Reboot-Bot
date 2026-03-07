@@ -69,7 +69,9 @@ services:
     volumes:
       - ./data:/app/data
       - ./Slides:/app/slides:ro
+      - backups:/app/backups
 
 volumes:
   pgdata:
   nc_data:
+  backups:

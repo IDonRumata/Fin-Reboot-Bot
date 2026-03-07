@@ -124,7 +124,16 @@ async def main() -> None:
         hour=3,
         minute=0,
         args=[bot],
-        id="daily_backup",
+        id="daily_backup_night",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        create_and_send_backup,
+        "cron",
+        hour=15,
+        minute=0,
+        args=[bot],
+        id="daily_backup_day",
         replace_existing=True,
     )
     scheduler.start()

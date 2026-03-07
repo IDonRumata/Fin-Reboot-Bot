@@ -30,6 +30,11 @@ temp_docx.zip
 temp_docx_extract/
 *.docx
 
+# Backups (contain user data!)
+*.sql
+*.sql.gz
+backups/
+
 # Logs
 *.log
 

@@ -21,7 +21,7 @@ from bot.core.config import settings
 logger = logging.getLogger(__name__)
 
 BACKUP_DIR = Path("/app/backups")
-MAX_BACKUPS = 7
+MAX_BACKUPS = 14
 
 
 async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -> bool:

@@ -32,6 +32,10 @@ async def handle_bepaid_webhook(request: web.Request) -> web.Response:
     """
     try:
         body = await request.read()
+        # Reject oversized payloads (max 1 MB)
+        if len(body) > 1_048_576:
+            logger.warning("Webhook payload too large: %d bytes", len(body))
+            return web.Response(status=413, text="Payload too large")
         data = json.loads(body)
     except Exception as exc:
         logger.error("Failed to parse webhook body: %s", exc)
@@ -39,15 +43,17 @@ async def handle_bepaid_webhook(request: web.Request) -> web.Response:
 
     logger.info("bePaid webhook received: %s", json.dumps(data, ensure_ascii=False)[:500])
 
-    # ── Verify signature (if webhook secret is configured) ──
-    if settings.bepaid_webhook_secret:
-        signature = request.headers.get("Authorization", "")
-        # bePaid uses Basic auth with shop_id:secret_key
-        # or signature header depending on configuration
-        # For product links, we verify the transaction status
-        if not signature:
-            logger.warning("No authorization header in webhook")
-            # Still process — some bePaid setups don't send auth
+    # ── Verify Basic Auth (bePaid sends Authorization: Basic base64(shop_id:secret_key)) ──
+    if settings.bepaid_shop_id and settings.bepaid_secret_key:
+        import base64
+        auth_header = request.headers.get("Authorization", "")
+        expected_credentials = base64.b64encode(
+            f"{settings.bepaid_shop_id}:{settings.bepaid_secret_key}".encode()
+        ).decode()
+        expected_auth = f"Basic {expected_credentials}"
+        if auth_header != expected_auth:
+            logger.warning("Webhook auth failed. Header: %s", auth_header[:30] if auth_header else "(empty)")
+            return web.Response(status=401, text="Unauthorized")
 
     # ── Extract transaction info ──
     transaction = data.get("transaction", {})
