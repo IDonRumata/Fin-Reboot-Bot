@@ -248,7 +248,13 @@ async def send_full_day(
     first_name = user.first_name if user else None
     name = first_name or "друг"
     greeting = DAY_GREETINGS.get(day, "")
-    text = f"👋 <b>{name}, привет!</b>\n\n📅 <b>День {day}.</b> {greeting}"
+
+    # Streak counter
+    streak = ""
+    if day > 1:
+        streak = f"\n🔥 <i>{day} дней подряд — отличный темп!</i>"
+
+    text = f"👋 <b>{name}, привет!</b>\n\n📅 <b>День {day}.</b> {greeting}{streak}"
     try:
         await bot.send_message(chat_id=telegram_id, text=text, parse_mode="HTML")
         await asyncio.sleep(2)
@@ -258,3 +264,15 @@ async def send_full_day(
         logger.error("Failed to send greeting to %s: %s", telegram_id, exc)
 
     await send_day_block(bot, session, telegram_id, user_id, day, block_num=1)
+
+    # Subtle disclaimer at the end of the first block
+    disclaimer = (
+        "\n<i>⚠️ Материал носит образовательный характер. "
+        "Автор делится личным опытом и не является "
+        "лицензированным финансовым консультантом.</i>"
+    )
+    try:
+        await asyncio.sleep(1)
+        await bot.send_message(chat_id=telegram_id, text=disclaimer, parse_mode="HTML")
+    except Exception:
+        pass  # Non-critical

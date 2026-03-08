@@ -40,6 +40,7 @@ async def cmd_admin(message: types.Message) -> None:
         "/sync – Загрузить контент из CSV файла\n"
         "/test_send <code>telegram_id day</code> – Тестовая отправка контента\n"
         "/confirm_payment <code>telegram_id</code> – Подтвердить оплату вручную\n"
+        "/grant <code>telegram_id</code> – Бесплатный доступ (для знакомых)\n"
         "/stats – Статистика бота\n"
         "/export – Выгрузить данные квиза в CSV\n"
         "/broadcast <code>текст</code> – Рассылка всем прошедшим квиз\n"
@@ -91,6 +92,26 @@ async def cmd_stats(message: types.Message, session: AsyncSession) -> None:
         else "0%"
     )
 
+    # A/B test stats
+    ab_a_total = (await session.execute(
+        select(func.count(User.id)).where(User.ab_group == "A")
+    )).scalar() or 0
+    ab_b_total = (await session.execute(
+        select(func.count(User.id)).where(User.ab_group == "B")
+    )).scalar() or 0
+    ab_a_paid = (await session.execute(
+        select(func.count(User.id)).where(
+            User.ab_group == "A", User.payment_status == PaymentStatus.paid
+        )
+    )).scalar() or 0
+    ab_b_paid = (await session.execute(
+        select(func.count(User.id)).where(
+            User.ab_group == "B", User.payment_status == PaymentStatus.paid
+        )
+    )).scalar() or 0
+    ab_a_conv = f"{ab_a_paid/ab_a_total*100:.1f}%" if ab_a_total > 0 else "—"
+    ab_b_conv = f"{ab_b_paid/ab_b_total*100:.1f}%" if ab_b_total > 0 else "—"
+
     text = (
         "📊 <b>Статистика</b>\n\n"
         f"👤 Всего: {total}\n"
@@ -107,7 +128,10 @@ async def cmd_stats(message: types.Message, session: AsyncSession) -> None:
         f"  🚀 Тип B (готов): {quiz_stats['type_b']}\n"
         f"  📊 Тип C (инвестор): {quiz_stats['type_c']}\n"
         f"  💰 Купили после квиза: {quiz_stats['purchased']}\n"
-        f"  📈 Конверсия квиз→покупка: {quiz_conv}"
+        f"  📈 Конверсия квиз→покупка: {quiz_conv}\n\n"
+        f"<b>A/B тест (квиз):</b>\n"
+        f"  🅰️ Вариант A: {ab_a_total} чел → {ab_a_paid} покупок ({ab_a_conv})\n"
+        f"  🅱️ Вариант B: {ab_b_total} чел → {ab_b_paid} покупок ({ab_b_conv})"
     )
     await message.answer(text)
 
@@ -291,6 +315,59 @@ async def cmd_broadcast(message: types.Message, session: AsyncSession, bot: Bot)
         f"🚫 Заблокировали: {blocked}\n"
         f"❌ Ошибки: {failed}"
     )
+
+
+@router.message(Command("grant"))
+async def cmd_grant(
+    message: types.Message, session: AsyncSession, bot: Bot
+) -> None:
+    """Grant free access to a user (for friends/testers)."""
+    if not message.from_user or not _is_admin(message.from_user.id):
+        return
+
+    parts = (message.text or "").split()
+    if len(parts) < 2:
+        await message.answer("Использование: /grant <code>telegram_id</code>")
+        return
+
+    try:
+        telegram_id = int(parts[1])
+    except ValueError:
+        await message.answer("Неверный формат.")
+        return
+
+    user = await repo.get_user_by_telegram_id(session, telegram_id)
+    if not user:
+        await message.answer(f"Пользователь {telegram_id} не найден.")
+        return
+
+    if user.payment_status == PaymentStatus.paid:
+        await message.answer(f"Пользователь {telegram_id} уже имеет доступ.")
+        return
+
+    await repo.confirm_payment(session, user.id, transaction_id="free_grant")
+
+    # Notify user
+    try:
+        await bot.send_message(
+            chat_id=telegram_id,
+            text=(
+                "━━━━━━━━━━━━━━━━━━━\n"
+                "🎁 <b>ВАМ ОТКРЫТ ДОСТУП!</b>\n"
+                "━━━━━━━━━━━━━━━━━━━\n\n"
+                "Добро пожаловать в программу «Финансовая перезагрузка»! 🎉\n\n"
+                "📚 Первый день программы начнётся через несколько секунд!"
+            ),
+        )
+    except Exception as exc:
+        logger.error("Failed to notify user %s: %s", telegram_id, exc)
+
+    # Send Day 1
+    import asyncio
+    await asyncio.sleep(5)
+    await send_full_day(bot, session, telegram_id, user.id, day=1)
+
+    await message.answer(f"✅ Бесплатный доступ для {telegram_id} выдан, День 1 отправлен.")
 
 
 @router.message(Command("backup"))

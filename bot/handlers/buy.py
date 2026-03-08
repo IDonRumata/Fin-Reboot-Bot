@@ -93,12 +93,18 @@ async def cb_accept_oferta(
             )
         return
 
+    # Create pending payment
+    await repo.create_payment(session, user.id, amount=1500, payment_method="bepaid")
+
+    # Try to create dynamic bePaid checkout with tracking_id
+    payment_url = await _create_bepaid_checkout(callback.from_user.id)
+
     # Show both payment options: bePaid online + card transfer
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(
                 text="💳 Оплатить онлайн (bePaid)",
-                url=settings.bepaid_payment_url,
+                url=payment_url,
             )],
             [InlineKeyboardButton(
                 text="💵 Перевод на карту",
@@ -107,19 +113,90 @@ async def cb_accept_oferta(
             [InlineKeyboardButton(text="🔙 Меню", callback_data="menu")],
         ]
     )
+    auto_note = ""
+    if payment_url != settings.bepaid_payment_url:
+        auto_note = "\n✨ После оплаты курс активируется <b>автоматически</b>!"
+
     text = (
         "💳 <b>Оплата курса</b>\n\n"
         "Стоимость: <b>15 BYN</b>\n\n"
         "Выберите удобный способ оплаты:\n\n"
-        "🔹 <b>Онлайн (bePaid)</b> – моментальная автоматическая активация\n"
+        f"🔹 <b>Онлайн (bePaid)</b> – моментальная автоматическая активация{auto_note}\n"
         "🔹 <b>Перевод на карту</b> – ручная проверка администратором"
     )
 
-    # Create pending payment
-    await repo.create_payment(session, user.id, amount=1500, payment_method="bepaid")
-
     if callback.message:
         await callback.message.answer(text, reply_markup=keyboard)  # type: ignore[union-attr]
+
+
+async def _create_bepaid_checkout(telegram_id: int) -> str:
+    """Create a bePaid checkout session with tracking_id for auto-payment.
+    
+    Returns the payment URL. Falls back to static URL on error.
+    """
+    if not settings.bepaid_shop_id or not settings.bepaid_secret_key:
+        logger.warning("bePaid credentials not configured, using static URL")
+        return settings.bepaid_payment_url
+
+    import aiohttp
+    import base64
+
+    auth = base64.b64encode(
+        f"{settings.bepaid_shop_id}:{settings.bepaid_secret_key}".encode()
+    ).decode()
+
+    payload = {
+        "checkout": {
+            "test": False,
+            "transaction_type": "payment",
+            "attempts": 3,
+            "settings": {
+                "success_url": "https://t.me/fin_reboot_bot?start=payment_success",
+                "decline_url": "https://t.me/fin_reboot_bot?start=payment_fail",
+                "fail_url": "https://t.me/fin_reboot_bot?start=payment_fail",
+                "notification_url": settings.bepaid_notification_url or f"http://185.229.251.166:{settings.webhook_port}/webhook/bepaid",
+                "language": "ru",
+                "customer_fields": {
+                    "visible": ["email"],
+                    "read_only": [],
+                },
+            },
+            "order": {
+                "currency": "BYN",
+                "amount": 1500,  # 15.00 BYN in cents
+                "description": f"Курс «Финансовая перезагрузка» (ID: {telegram_id})",
+                "tracking_id": str(telegram_id),
+            },
+        }
+    }
+
+    try:
+        async with aiohttp.ClientSession() as http_session:
+            async with http_session.post(
+                settings.bepaid_checkout_url,
+                json=payload,
+                headers={
+                    "Authorization": f"Basic {auth}",
+                    "Content-Type": "application/json",
+                },
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as resp:
+                if resp.status == 200 or resp.status == 201:
+                    data = await resp.json()
+                    checkout_url = data.get("checkout", {}).get("redirect_url", "")
+                    if checkout_url:
+                        logger.info("Created bePaid checkout for user %s: %s", telegram_id, checkout_url[:50])
+                        return checkout_url
+                    else:
+                        logger.error("bePaid response missing redirect_url: %s", data)
+                else:
+                    body = await resp.text()
+                    logger.error("bePaid checkout API error %s: %s", resp.status, body[:300])
+    except Exception as exc:
+        logger.error("Failed to create bePaid checkout: %s", exc)
+
+    # Fallback to static URL
+    return settings.bepaid_payment_url
 
 
 @router.callback_query(F.data == "pay_by_card")

@@ -384,6 +384,7 @@ async def save_quiz_result(
     score: int,
     user_type: str,
     name: str,
+    ab_group: str | None = None,
 ) -> User | None:
     """Save quiz results for a user."""
     user = await get_user_by_telegram_id(session, telegram_id)
@@ -396,6 +397,8 @@ async def save_quiz_result(
     user.quiz_completed_at = datetime.now(timezone.utc)
     user.quiz_followup_step = 0
     user.quiz_followup_last_at = datetime.now(timezone.utc)
+    if ab_group:
+        user.ab_group = ab_group
     await session.commit()
     return user
 

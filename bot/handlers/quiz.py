@@ -217,18 +217,38 @@ def _build_question_keyboard(question_key: str) -> InlineKeyboardMarkup:
 
 async def start_quiz(message: types.Message, state: FSMContext) -> None:
     """Entry point — called from start.py when deep link has quiz_ prefix."""
-    welcome_text = (
-        "━━━━━━━━━━━━━━━━━━━\n"
-        "🔥 <b>Финансовая перезагрузка</b>\n"
-        "━━━━━━━━━━━━━━━━━━━\n\n"
-        "Привет! 👋\n\n"
-        "Ответь на <b>6 коротких вопросов</b> — "
-        "и ты узнаешь свой финансовый тип.\n\n"
-        "А ещё получишь:\n"
-        "🎁 Шпаргалку по налогам на инвестиции\n"
-        "📊 Персональные рекомендации\n\n"
-        "Занимает 2 минуты. Погнали? 🚀"
-    )
+    # A/B split: assign group based on telegram_id
+    ab_group = "A" if (message.from_user.id % 2 == 0) else "B"  # type: ignore[union-attr]
+    await state.update_data(ab_group=ab_group)
+
+    if ab_group == "A":
+        # Variant A — original (benefits-focused)
+        welcome_text = (
+            "━━━━━━━━━━━━━━━━━━━\n"
+            "🔥 <b>Финансовая перезагрузка</b>\n"
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "Привет! 👋\n\n"
+            "Ответь на <b>6 коротких вопросов</b> — "
+            "и ты узнаешь свой финансовый тип.\n\n"
+            "А ещё получишь:\n"
+            "🎁 Шпаргалку по налогам на инвестиции\n"
+            "📊 Персональные рекомендации\n\n"
+            "Занимает 2 минуты. Погнали? 🚀"
+        )
+    else:
+        # Variant B — loss-aversion focused
+        welcome_text = (
+            "━━━━━━━━━━━━━━━━━━━\n"
+            "💸 <b>Ваши деньги тают. Проверим?</b>\n"
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "Привет! 👋\n\n"
+            "Пока вы читаете это сообщение — инфляция "
+            "съедает ваши сбережения.\n\n"
+            "Ответьте на <b>6 вопросов за 2 минуты</b> — "
+            "и узнайте, защищены ли ваши деньги.\n\n"
+            "🎁 Бонус: шпаргалка по налогам на инвестиции"
+        )
+
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="🚀 Начать квиз!", callback_data="quiz_start")]
@@ -335,6 +355,7 @@ async def process_name(
     user_type = _calculate_type(total_score)
 
     # Save to DB
+    ab_group = data.get("ab_group")
     await repo.save_quiz_result(
         session,
         telegram_id=message.from_user.id,
@@ -342,6 +363,7 @@ async def process_name(
         score=total_score,
         user_type=user_type,
         name=name,
+        ab_group=ab_group,
     )
 
     await state.set_state(QuizStates.finished)

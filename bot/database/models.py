@@ -109,6 +109,9 @@ class User(Base):
         DateTime(timezone=True), nullable=True
     )
 
+    # A/B testing
+    ab_group: Mapped[str | None] = mapped_column(String(1), nullable=True)  # "A" or "B"
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
