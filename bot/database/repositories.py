@@ -494,3 +494,41 @@ async def mark_user_blocked(session: AsyncSession, telegram_id: int) -> None:
         user.status = UserStatus.blocked
         await session.commit()
 
+
+async def reset_user(session: AsyncSession, telegram_id: int) -> bool:
+    """Full reset: clears payment, quiz results, and all day progress.
+    Returns True if user was found, False otherwise."""
+    user = await get_user_by_telegram_id(session, telegram_id)
+    if not user:
+        return False
+
+    # Reset payment
+    user.payment_status = PaymentStatus.none
+    user.status = UserStatus.active
+
+    # Reset quiz
+    user.quiz_answers = None
+    user.quiz_score = None
+    user.quiz_user_type = None
+    user.quiz_name_entered = None
+    user.quiz_completed_at = None
+    user.quiz_followup_step = 0
+    user.quiz_followup_last_at = None
+    user.ab_group = None
+
+    await session.commit()
+
+    # Reset progress
+    progress = await get_progress(session, user.id)
+    if progress:
+        progress.current_day = 1
+        for day in range(1, 6):
+            setattr(progress, f"day_{day}_status", DayStatus.not_started)
+            setattr(progress, f"day_{day}_current_block", 0)
+            setattr(progress, f"day_{day}_sent_at", None)
+            setattr(progress, f"day_{day}_completed_at", None)
+            setattr(progress, f"day_{day}_reminder_sent", False)
+        await session.commit()
+
+    return True
+

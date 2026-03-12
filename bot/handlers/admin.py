@@ -1,4 +1,4 @@
-"""Admin commands: /admin, /sync, /test_send, /confirm_payment, /stats, /export, /broadcast."""
+"""Admin commands: /admin, /sync, /test_send, /confirm_payment, /reset_user, /stats, /export, /broadcast."""
 
 from __future__ import annotations
 
@@ -41,6 +41,7 @@ async def cmd_admin(message: types.Message) -> None:
         "/test_send <code>telegram_id day</code> – Тестовая отправка контента\n"
         "/confirm_payment <code>telegram_id</code> – Подтвердить оплату вручную\n"
         "/grant <code>telegram_id</code> – Бесплатный доступ (для знакомых)\n"
+        "/reset_user <code>telegram_id</code> – Полный сброс (квиз, оплата, прогресс)\n"
         "/stats – Статистика бота\n"
         "/export – Выгрузить данные квиза в CSV\n"
         "/broadcast <code>текст</code> – Рассылка всем прошедшим квиз\n"
@@ -368,6 +369,42 @@ async def cmd_grant(
     await send_full_day(bot, session, telegram_id, user.id, day=1)
 
     await message.answer(f"✅ Бесплатный доступ для {telegram_id} выдан, День 1 отправлен.")
+
+
+@router.message(Command("reset_user"))
+async def cmd_reset_user(
+    message: types.Message, session: AsyncSession
+) -> None:
+    """Full reset of a user: payment, quiz results, and day progress."""
+    if not message.from_user or not _is_admin(message.from_user.id):
+        return
+
+    parts = (message.text or "").split()
+    if len(parts) < 2:
+        await message.answer(
+            "Использование: /reset_user <code>telegram_id</code>\n\n"
+            "Сбрасывает: оплату, квиз, прогресс по дням."
+        )
+        return
+
+    try:
+        telegram_id = int(parts[1])
+    except ValueError:
+        await message.answer("Неверный формат. Пример: /reset_user 123456789")
+        return
+
+    found = await repo.reset_user(session, telegram_id)
+    if not found:
+        await message.answer(f"Пользователь {telegram_id} не найден.")
+        return
+
+    await message.answer(
+        f"✅ Пользователь <code>{telegram_id}</code> полностью сброшен.\n\n"
+        f"- Оплата: нет\n"
+        f"- Квиз: не пройден\n"
+        f"- Прогресс: с нуля\n\n"
+        f"Пользователь может снова пройти квиз и купить курс."
+    )
 
 
 @router.message(Command("backup"))
