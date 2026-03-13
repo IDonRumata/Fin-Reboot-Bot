@@ -411,7 +411,26 @@ async def process_name(
     )
     await message.answer(lead_magnet_text, reply_markup=tax_keyboard)
 
-    await asyncio.sleep(3)
+    await asyncio.sleep(2)
+
+    # Authors block
+    authors_text = (
+        "👥 <b>Кто стоит за курсом?</b>\n\n"
+        "👩 <b>Марина Дементьева</b> - 20 лет в инвестициях, "
+        "живёт на пассивный доход от недвижимости и портфеля\n"
+        '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
+        '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
+        '<a href="https://instagram.com/marina_dementjeva">Instagram</a>\n\n'
+        "👨 <b>Андрей Мороз</b> - дальнобойщик, строит капитал прямо в рейсах\n"
+        "С 25 октября 2025 делает +1 отжимание каждый день - "
+        "годовой челлендж. Говорит: с деньгами работает то же самое.\n"
+        '<a href="https://tiktok.com/@krononchill">TikTok</a>  '
+        '<a href="https://youtube.com/@andreimarozv">YouTube</a>  '
+        '<a href="https://instagram.com/krononchill">Instagram</a>'
+    )
+    await message.answer(authors_text, disable_web_page_preview=True)
+
+    await asyncio.sleep(2)
 
     # Course offer
     offer_text = (

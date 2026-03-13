@@ -56,6 +56,10 @@ FOLLOWUP_MESSAGES = {
             "за 20 лет. Без воды. Без теории из учебников. "
             "Только то, что реально работает.»\n\n"
             "- <i>Марина Дементьева, автор курса</i>\n\n"
+            "Подпишись на Марину:\n"
+            '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
+            '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
+            '<a href="https://instagram.com/marina_dementjeva">Instagram</a>\n\n'
             "💰 Стоимость: <b>15 BYN</b>"
         ),
     },
@@ -71,7 +75,18 @@ FOLLOWUP_MESSAGES = {
             "Но 90% людей так и не начинают инвестировать "
             "именно из-за сомнений. А потом жалеют.\n\n"
             "Шпаргалка по налогам - уже твоя. "
-            "Курс - когда будешь готов(а) 🙂"
+            "Курс - когда будешь готов(а) 🙂\n\n"
+            "P.S. Андрей - соавтор курса - дальнобойщик. "
+            "С 25 октября 2025 делает +1 отжимание каждый день - "
+            "годовой челлендж. Говорит: маленький шаг каждый день "
+            "меняет всё - в спорте и в деньгах одинаково.\n"
+            '<a href="https://tiktok.com/@krononchill">TikTok</a>  '
+            '<a href="https://youtube.com/@andreimarozv">YouTube</a>  '
+            '<a href="https://instagram.com/krononchill">Instagram</a>\n\n'
+            "Марина:\n"
+            '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
+            '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
+            '<a href="https://instagram.com/marina_dementjeva">Instagram</a>'
         ),
     },
 }
