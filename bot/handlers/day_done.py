@@ -6,6 +6,7 @@ and show a progress bar.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 
@@ -63,3 +64,25 @@ async def cb_day_done(callback: types.CallbackQuery, session: AsyncSession) -> N
 
     if callback.message:
         await callback.message.answer(text)  # type: ignore[union-attr]
+
+        # Social links after course completion (day 5)
+        if day == 5:
+            await asyncio.sleep(3)
+            socials_text = (
+                "📱 <b>Оставайтесь с нами</b>\n\n"
+                "Марина:\n"
+                '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
+                '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
+                '<a href="https://instagram.com/marina_dementjeva">Instagram</a>\n\n'
+                "Андрей:\n"
+                '<a href="https://tiktok.com/@krononchill">TikTok</a>  '
+                '<a href="https://youtube.com/@andreimarozv">YouTube</a>  '
+                '<a href="https://instagram.com/krononchill">Instagram</a>'
+            )
+            try:
+                await callback.message.answer(  # type: ignore[union-attr]
+                    socials_text,
+                    disable_web_page_preview=True,
+                )
+            except Exception:
+                pass

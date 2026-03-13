@@ -265,6 +265,25 @@ async def send_full_day(
 
     await send_day_block(bot, session, telegram_id, user_id, day, block_num=1)
 
+    # Day 3: subtle social links
+    if day == 3:
+        socials_hint = (
+            '💡 Кстати, Марина выкладывает короткие разборы в соцсетях: '
+            '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
+            '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
+            '<a href="https://instagram.com/marina_dementjeva">Instagram</a>'
+        )
+        try:
+            await asyncio.sleep(2)
+            await bot.send_message(
+                chat_id=telegram_id,
+                text=socials_hint,
+                parse_mode="HTML",
+                disable_web_page_preview=True,
+            )
+        except Exception:
+            pass
+
     # Subtle disclaimer at the end of the first block
     disclaimer = (
         "\n<i>⚠️ Материал носит образовательный характер. "
