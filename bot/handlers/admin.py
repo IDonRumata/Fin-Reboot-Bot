@@ -439,12 +439,12 @@ async def _import_csv(session: AsyncSession, path: Path) -> int:
                     block=int(row.get("block", 1)),
                     order=int(row["order"]),
                     type=ContentType(row["type"].strip().lower()),
-                    content=row.get("content", "").strip() or None,
-                    file_id=row.get("file_id", "").strip() or None,
-                    caption=row.get("caption", "").strip() or None,
-                    button_text=row.get("button_text", "").strip() or None,
-                    button_callback=row.get("button_callback", "").strip() or None,
-                    parse_mode=row.get("parse_mode", "HTML").strip(),
+                    content=(row.get("content") or "").strip() or None,
+                    file_id=(row.get("file_id") or "").strip() or None,
+                    caption=(row.get("caption") or "").strip() or None,
+                    button_text=(row.get("button_text") or "").strip() or None,
+                    button_callback=(row.get("button_callback") or "").strip() or None,
+                    parse_mode=(row.get("parse_mode") or "HTML").strip(),
                     delay_seconds=int(row.get("delay_seconds", 0) or 0),
                 )
                 session.add(block)
