@@ -44,10 +44,10 @@ QUESTIONS = {
             "Деньги, которые ты откладываешь - где они обычно оседают?"
         ),
         "options": [
-            ("A", "Наличка дома. Конверт, ящик стола, под матрас - классика"),
-            ("B", "На карточке. Просто лежат, куда ещё их девать"),
-            ("C", "На вкладе в банке. Хоть что-то капает"),
-            ("D", "В разных местах - пробую разные варианты"),
+            ("A", "Наличка дома - конверт, матрас"),
+            ("B", "На карточке - просто лежат"),
+            ("C", "На вкладе - хоть что-то капает"),
+            ("D", "В разных местах - пробую варианты"),
         ],
     },
     "q2": {
@@ -57,10 +57,10 @@ QUESTIONS = {
             "чем год назад. Твоя реакция?"
         ),
         "options": [
-            ("A", "Злюсь, но что поделаешь - смиряюсь"),
-            ("B", "Стараюсь тратить меньше и больше откладывать"),
-            ("C", "Думаю, что надо бы куда-то вложить, но не знаю куда"),
-            ("D", "Уже ищу способы, чтобы деньги не обесценивались"),
+            ("A", "Злюсь, но смиряюсь"),
+            ("B", "Трачу меньше, больше откладываю"),
+            ("C", "Надо бы вложить, но не знаю куда"),
+            ("D", "Уже ищу способы защитить деньги"),
         ],
     },
     "q3": {
@@ -70,10 +70,10 @@ QUESTIONS = {
             "Твоя реакция?"
         ),
         "options": [
-            ("A", "Акции? Это же лотерея. Лучше не трогать"),
-            ("B", "Интересно, но страшно - а вдруг всё потеряет?"),
-            ("C", "Нормальная идея, сам(а) думаю попробовать"),
-            ("D", "Маловато вкладывает - я бы больше"),
+            ("A", "Акции - это лотерея, лучше не трогать"),
+            ("B", "Интересно, но страшно потерять"),
+            ("C", "Нормально, тоже думаю попробовать"),
+            ("D", "Маловато - я бы вложил(а) больше"),
         ],
     },
     "q4": {
@@ -82,10 +82,10 @@ QUESTIONS = {
             "Есть ли у тебя конкретная финансовая цель на ближайшие 3 года?"
         ),
         "options": [
-            ("A", "Цель одна - дотянуть до следующей зарплаты"),
-            ("B", "Хочу что-то накопить, но конкретики нет"),
-            ("C", "Есть примерная сумма, к которой стремлюсь"),
-            ("D", "Есть чёткий план: сколько, куда и когда"),
+            ("A", "Дотянуть до следующей зарплаты"),
+            ("B", "Хочу накопить, но конкретики нет"),
+            ("C", "Есть примерная сумма-цель"),
+            ("D", "Чёткий план: сколько, куда, когда"),
         ],
     },
     "q5": {
@@ -95,10 +95,10 @@ QUESTIONS = {
             "(не считая момент, когда они кончились)?"
         ),
         "options": [
-            ("A", "Только когда карта зависла на кассе"),
-            ("B", "Иногда смотрю выписку - и закрываю с грустью"),
-            ("C", "Слежу за расходами, иногда читаю про финансы"),
-            ("D", "Регулярно анализирую и ищу, как улучшить ситуацию"),
+            ("A", "Когда карта зависла на кассе"),
+            ("B", "Смотрю выписку - грущу"),
+            ("C", "Слежу за расходами, читаю"),
+            ("D", "Регулярно анализирую и улучшаю"),
         ],
     },
     "q6": {
@@ -107,9 +107,9 @@ QUESTIONS = {
             "Через 10 лет ты хочешь..."
         ),
         "options": [
-            ("A", "Просто чтобы была стабильная работа и всё шло как идёт"),
-            ("B", "Иметь подушку безопасности и спать спокойно"),
-            ("C", "Получать доп. доход помимо основной работы"),
+            ("A", "Стабильная работа, всё как идёт"),
+            ("B", "Подушка безопасности и спокойствие"),
+            ("C", "Доп. доход помимо работы"),
             ("D", "Не зависеть от работы вообще"),
         ],
     },
@@ -198,18 +198,26 @@ STATE_MAP = {
 }
 
 
-def _build_question_keyboard(question_key: str) -> InlineKeyboardMarkup:
-    """Build inline keyboard for a quiz question."""
+def _build_question_text(question_key: str) -> str:
+    """Build full question text with answer options listed in the message."""
     q = QUESTIONS[question_key]
-    buttons = []
-    for option_letter, option_text in q["options"]:
-        buttons.append([
-            InlineKeyboardButton(
-                text=f"{option_letter}) {option_text}",
-                callback_data=f"quiz_{question_key}_{option_letter}",
-            )
-        ])
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    options_text = "\n".join(
+        f"{letter}) {text}" for letter, text in q["options"]
+    )
+    return f'{q["text"]}\n\n{options_text}'
+
+
+def _build_question_keyboard(question_key: str) -> InlineKeyboardMarkup:
+    """Build compact inline keyboard with just A/B/C/D buttons in one row."""
+    q = QUESTIONS[question_key]
+    buttons = [
+        InlineKeyboardButton(
+            text=option_letter,
+            callback_data=f"quiz_{question_key}_{option_letter}",
+        )
+        for option_letter, _ in q["options"]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=[buttons])
 
 
 # ──────────────────── Handlers ────────────────────────────────
@@ -265,10 +273,10 @@ async def quiz_begin(callback: types.CallbackQuery, state: FSMContext) -> None:
     await state.set_state(QuizStates.q1)
     await state.update_data(answers={})
 
-    q = QUESTIONS["q1"]
+    text = _build_question_text("q1")
     keyboard = _build_question_keyboard("q1")
     if callback.message:
-        await callback.message.answer(q["text"], reply_markup=keyboard)  # type: ignore[union-attr]
+        await callback.message.answer(text, reply_markup=keyboard)  # type: ignore[union-attr]
 
 
 @router.callback_query(
@@ -417,7 +425,7 @@ async def process_name(
     authors_text = (
         "👥 <b>Кто стоит за курсом?</b>\n\n"
         "👩 <b>Марина Дементьева</b> - 20 лет в инвестициях, "
-        "живёт на пассивный доход от недвижимости и портфеля\n"
+        "с 2010 года не работает в найме - живёт на пассивный доход\n"
         '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
         '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
         '<a href="https://instagram.com/marina_dementjeva">Instagram</a>\n\n'
@@ -445,7 +453,7 @@ async def process_name(
         "🏆 Соберёшь свой первый портфель\n\n"
         "Каждый день - одно практическое действие.\n"
         "Автор курса - <b>Марина Дементьева</b>, "
-        "7 лет живёт на пассивный доход.\n\n"
+        "20 лет в инвестициях, с 2010 года живёт на пассивный доход.\n\n"
         "💰 Стоимость: <b>15 BYN</b>\n\n"
         "Это меньше, чем одна поездка на такси. "
         "А результат - на всю жизнь."
@@ -509,7 +517,7 @@ async def _process_answer(
 
     await state.set_state(next_state)
 
-    q = QUESTIONS[next_q]
+    text = _build_question_text(next_q)
     keyboard = _build_question_keyboard(next_q)
     if callback.message:
-        await callback.message.answer(q["text"], reply_markup=keyboard)  # type: ignore[union-attr]
+        await callback.message.answer(text, reply_markup=keyboard)  # type: ignore[union-attr]
