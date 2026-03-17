@@ -1,0 +1,94 @@
+{
+  "name": "FinReboot: Weekly Content Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "name": "Monday 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 4"
+            }
+          ]
+        }
+      },
+      "name": "Thursday 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [200, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Определяем тему по номеру недели\nconst WEEKLY_TOPICS = [\n  ['pushup_invest_1', 'myth_1'],\n  ['trucker_1', 'edu_dca'],\n  ['pushup_invest_2', 'edu_etf'],\n  ['trucker_2', 'myth_2'],\n  ['pushup_invest_3', 'by_tax'],\n  ['trucker_3', 'edu_compound'],\n  ['myth_3', 'by_broker'],\n];\n\nconst now = new Date();\nconst weekNum = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (7 * 24 * 60 * 60 * 1000));\nconst weekTopics = WEEKLY_TOPICS[weekNum % WEEKLY_TOPICS.length];\n\n// Понедельник = индекс 0, Четверг = индекс 1\nconst dayOfWeek = now.getDay(); // 1=Mon, 4=Thu\nconst topicIdx = dayOfWeek === 1 ? 0 : 1;\nconst topicId = weekTopics[topicIdx];\n\n// Дата старта челенджа\nconst challengeStart = new Date('2025-10-25');\nconst dayNumber = Math.floor((now - challengeStart) / (24 * 60 * 60 * 1000)) + 1;\nconst pushupCount = 10 + (dayNumber - 1);\n\nreturn [{\n  json: {\n    topic_id: topicId,\n    day_number: dayNumber,\n    pushup_count: pushupCount,\n    generated_date: now.toISOString().split('T')[0]\n  }\n}];"
+      },
+      "name": "Select Topic",
+      "type": "n8n-nodes-base.code",
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/generate",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "topic_id",
+              "value": "={{ $json.topic_id }}"
+            }
+          ]
+        }
+      },
+      "name": "Trigger Python Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [700, 400],
+      "notes": "Вызывает Python API для генерации через Gemini. Запусти: uvicorn api:app --port 8000"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $vars.ANDREY_TELEGRAM_ID }}",
+        "text": "=🎬 Генерация контента запущена!\n\n📌 Тема: {{ $node['Select Topic'].json.topic_id }}\n💪 День {{ $node['Select Topic'].json.day_number }}: {{ $node['Select Topic'].json.pushup_count }} отжиманий\n\n⏳ Пакет придёт через 30-60 секунд...",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Notify Andrey",
+      "type": "n8n-nodes-base.telegram",
+      "position": [700, 250],
+      "credentials": {
+        "telegramApi": {
+          "name": "FinReboot Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Monday 09:00": {
+      "main": [[{"node": "Select Topic", "type": "main", "index": 0}]]
+    },
+    "Thursday 09:00": {
+      "main": [[{"node": "Select Topic", "type": "main", "index": 0}]]
+    },
+    "Select Topic": {
+      "main": [[
+        {"node": "Trigger Python Generator", "type": "main", "index": 0},
+        {"node": "Notify Andrey", "type": "main", "index": 0}
+      ]]
+    }
+  },
+  "_comment": "НАСТРОЙКА: В Variables установить ANDREY_TELEGRAM_ID. В Credentials добавить Telegram Bot API."
+}

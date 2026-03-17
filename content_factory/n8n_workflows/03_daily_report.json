@@ -1,0 +1,53 @@
+{
+  "name": "FinReboot: Daily Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Every day 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Расчёт статистики отжиманий\nconst challengeStart = new Date('2025-10-25');\nconst now = new Date();\nconst dayNumber = Math.floor((now - challengeStart) / (24 * 60 * 60 * 1000)) + 1;\nconst pushupCount = 10 + (dayNumber - 1);\nconst yearEndCount = 10 + 364;\nconst daysLeft = 365 - dayNumber;\nconst progress = (dayNumber / 365 * 100).toFixed(1);\nconst progressBar = '█'.repeat(Math.floor(progress / 5)) + '░'.repeat(20 - Math.floor(progress / 5));\n\n// Всего отжиманий сделано (сумма 10+11+...+pushupCount)\nconst totalDone = dayNumber * 10 + (dayNumber * (dayNumber - 1)) / 2;\n\nreturn [{\n  json: {\n    day: dayNumber,\n    count: pushupCount,\n    year_end: yearEndCount,\n    days_left: daysLeft,\n    progress: progress,\n    progress_bar: progressBar,\n    total_done: totalDone.toLocaleString('ru-RU')\n  }\n}];"
+      },
+      "name": "Calculate Stats",
+      "type": "n8n-nodes-base.code",
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $vars.ANDREY_TELEGRAM_ID }}",
+        "text": "=☀️ <b>Доброе утро! Ежедневный отчёт</b>\n📅 {{ new Date().toLocaleDateString('ru-RU') }}\n\n🏋️ <b>Челендж отжиманий</b>\nДень {{ $json.day }} из 365\nСегодня: {{ $json.count }} отжиманий\nВсего сделано: {{ $json.total_done }}\nПрогресс: [{{ $json.progress_bar }}] {{ $json.progress }}%\nДо конца года: {{ $json.days_left }} дней\nПрогноз на финал: {{ $json.year_end }} отжиманий\n\n💡 <b>Контент-завод</b>\nДля генерации: /generate &lt;topic_id&gt;\nСписок тем: /topics\n\n📊 Статистика бота обновляется в 20:00",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send Morning Report",
+      "type": "n8n-nodes-base.telegram",
+      "position": [700, 300],
+      "credentials": {
+        "telegramApi": {
+          "name": "FinReboot Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every day 08:00": {
+      "main": [[{"node": "Calculate Stats", "type": "main", "index": 0}]]
+    },
+    "Calculate Stats": {
+      "main": [[{"node": "Send Morning Report", "type": "main", "index": 0}]]
+    }
+  }
+}

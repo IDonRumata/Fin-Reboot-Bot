@@ -1,0 +1,15 @@
+[Unit]
+Description=GraFin Content Publisher Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/grafin_bot
+ExecStart=/usr/bin/python3 /opt/grafin_bot/main.py bot
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

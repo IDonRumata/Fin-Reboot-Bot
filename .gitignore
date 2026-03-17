@@ -44,3 +44,14 @@ Thumbs.db
 
 # Claude
 .claude/
+
+# Content factory — secrets & generated content
+content_factory/.env
+content_factory/credentials.json
+content_factory/vps_setup.py
+content_factory/vps_deploy.py
+content_factory/deploy_to_vps.bat
+content_factory/content_output/
+content_factory/media/audio/
+content_factory/media/approved/
+content_factory/media/published/
