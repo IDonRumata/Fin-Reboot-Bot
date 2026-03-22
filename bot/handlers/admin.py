@@ -346,7 +346,8 @@ async def cmd_grant(
         await message.answer(f"Пользователь {telegram_id} уже имеет доступ.")
         return
 
-    await repo.confirm_payment(session, user.id, transaction_id="free_grant")
+    import time as _time
+    await repo.confirm_payment(session, user.id, transaction_id=f"free_grant_{telegram_id}_{int(_time.time())}")
 
     try:
         await bot.send_message(
