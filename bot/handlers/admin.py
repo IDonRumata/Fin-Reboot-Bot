@@ -322,7 +322,7 @@ async def cmd_broadcast(message: types.Message, session: AsyncSession, bot: Bot)
 async def cmd_grant(
     message: types.Message, session: AsyncSession, bot: Bot
 ) -> None:
-    """Grant free access to a user (for friends/testers)."""
+    """Grant free access to a user — asks for confirmation first."""
     if not message.from_user or not _is_admin(message.from_user.id):
         return
 
@@ -346,6 +346,41 @@ async def cmd_grant(
         await message.answer(f"Пользователь {telegram_id} уже имеет доступ.")
         return
 
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Подтвердить", callback_data=f"grant_confirm:{telegram_id}"),
+            InlineKeyboardButton(text="❌ Отмена", callback_data="grant_cancel"),
+        ]
+    ])
+    username = user.username or "—"
+    await message.answer(
+        f"⚠️ <b>Подтвердите выдачу бесплатного доступа</b>\n\n"
+        f"ID: <code>{telegram_id}</code>\n"
+        f"Username: @{username}\n\n"
+        f"Доступ будет открыт и День 1 отправлен.",
+        reply_markup=keyboard,
+    )
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("grant_confirm:"))
+async def cb_grant_confirm(
+    callback: types.CallbackQuery, session: AsyncSession, bot: Bot
+) -> None:
+    if not callback.from_user or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+
+    telegram_id = int(callback.data.split(":")[1])  # type: ignore[union-attr]
+
+    user = await repo.get_user_by_telegram_id(session, telegram_id)
+    if not user:
+        await callback.answer("Пользователь не найден.", show_alert=True)
+        return
+
+    if user.payment_status == PaymentStatus.paid:
+        await callback.answer("Уже имеет доступ.", show_alert=True)
+        return
+
     await repo.confirm_payment(session, user.id, transaction_id="free_grant")
 
     # Notify user
@@ -363,12 +398,23 @@ async def cmd_grant(
     except Exception as exc:
         logger.error("Failed to notify user %s: %s", telegram_id, exc)
 
-    # Send Day 1
     import asyncio
     await asyncio.sleep(5)
     await send_full_day(bot, session, telegram_id, user.id, day=1)
 
-    await message.answer(f"✅ Бесплатный доступ для {telegram_id} выдан, День 1 отправлен.")
+    if callback.message:
+        await callback.message.edit_text(f"✅ Бесплатный доступ для {telegram_id} выдан, День 1 отправлен.")
+    await callback.answer()
+
+
+@router.callback_query(lambda c: c.data == "grant_cancel")
+async def cb_grant_cancel(callback: types.CallbackQuery) -> None:
+    if not callback.from_user or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+    if callback.message:
+        await callback.message.edit_text("❌ Выдача доступа отменена.")
+    await callback.answer()
 
 
 @router.message(Command("reset_user"))
