@@ -59,7 +59,7 @@ async def cb_day_done(callback: types.CallbackQuery, session: AsyncSession) -> N
         text = (
             "🎓 <b>Поздравляем! Курс пройден!</b>\n\n"
             f"{progress_text}\n\n"
-            "Спасибо, что прошли перезагрузку с нами! 💪"
+            "Спасибо, что прошли курс с нами! 💪"
         )
 
     if callback.message:

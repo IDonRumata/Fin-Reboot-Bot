@@ -27,7 +27,7 @@ async def cb_buy(callback: types.CallbackQuery) -> None:
         "<b>1. Общие положения</b>\n"
         "Настоящий документ является официальным предложением (публичной офертой) "
         "на оказание информационно-образовательных услуг в рамках курса "
-        "«Финансовая перезагрузка».\n\n"
+        "«Графин».\n\n"
         "<b>2. Предмет оферты</b>\n"
         "▸ Курс предоставляется в формате Telegram-бота\n"
         "▸ Доступ – 5 дней с момента активации\n"
@@ -56,7 +56,7 @@ async def cb_oferta(callback: types.CallbackQuery) -> None:
     await callback.answer()
     text = (
         "📜 <b>Публичная оферта</b>\n\n"
-        "Курс «Финансовая перезагрузка» – информационно-образовательный продукт.\n"
+        "Курс «Графин» - информационно-образовательный продукт.\n"
         "Автор делится личным опытом и не является лицензированным финансовым консультантом.\n\n"
         '📎 <a href="https://docs.google.com/document/d/1yMMQiBvAoAIScFU9XvMXRJVnyoqpRb7FqCCh9w41NwI">'
         "Читать полный текст оферты</a>"
@@ -164,7 +164,7 @@ async def _create_bepaid_checkout(telegram_id: int) -> str:
             "order": {
                 "currency": "BYN",
                 "amount": 1500,  # 15.00 BYN in cents
-                "description": f"Курс «Финансовая перезагрузка» (ID: {telegram_id})",
+                "description": f"Курс «Графин» (ID: {telegram_id})",
                 "tracking_id": str(telegram_id),
             },
         }

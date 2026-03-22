@@ -58,6 +58,7 @@ async def send_single_block(
                         chat_id=chat_id,
                         text=text,
                         parse_mode=parse_mode,
+                        disable_web_page_preview=True,
                     )
                 else:
                     return False
@@ -80,6 +81,7 @@ async def send_single_block(
                     text=text,
                     reply_markup=keyboard,
                     parse_mode=parse_mode,
+                    disable_web_page_preview=True,
                 )
 
             case ContentType.text_with_webapp:
