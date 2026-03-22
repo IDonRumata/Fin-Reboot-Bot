@@ -33,7 +33,13 @@ class Settings(BaseSettings):
     webapp_calc_url: str = "https://t.me/fin_reboot_bot/calc"
     webapp_tracker_url: str = "https://t.me/fin_reboot_bot/tracker"
 
+    # -- Express-pay --
+    expresspay_api_key: str = ""        # Настройки → Услуги → API → API ключ
+    expresspay_service_id: str = ""     # Номер услуги (34197)
+    expresspay_webhook_token: str = ""  # Любой секрет — прописать в Express-pay кабинете
+
     # -- Misc --
+    bot_username: str = "fin_reboot_bot"
     support_username: str = "@suportfinreboot_bot"
     participants_chat_url: str = "https://t.me/+Dwg2Qlm42xEwYWNi"
     log_level: str = "INFO"

@@ -96,33 +96,42 @@ async def cb_accept_oferta(
     # Create pending payment
     await repo.create_payment(session, user.id, amount=4500, payment_method="bepaid")
 
-    # Try to create dynamic bePaid checkout with tracking_id
-    payment_url = await _create_bepaid_checkout(callback.from_user.id)
+    telegram_id = callback.from_user.id
 
-    # Show both payment options: bePaid online + card transfer
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(
-                text="💳 Оплатить онлайн (bePaid)",
-                url=payment_url,
-            )],
-            [InlineKeyboardButton(
-                text="💵 Перевод на карту",
-                callback_data="pay_by_card",
-            )],
-            [InlineKeyboardButton(text="🔙 Меню", callback_data="menu")],
-        ]
-    )
-    auto_note = ""
-    if payment_url != settings.bepaid_payment_url:
-        auto_note = "\n✨ После оплаты курс активируется <b>автоматически</b>!"
+    # Try Express-pay first (EPOS receipt auto-generated)
+    from bot.services.expresspay import create_invoice
+    expresspay_url = await create_invoice(telegram_id)
+
+    # Try bePaid as fallback
+    bepaid_url = await _create_bepaid_checkout(telegram_id)
+
+    # Build keyboard based on available payment methods
+    buttons = []
+    if expresspay_url:
+        buttons.append([InlineKeyboardButton(
+            text="💳 Оплатить онлайн (Express-pay)",
+            url=expresspay_url,
+        )])
+    if bepaid_url:
+        buttons.append([InlineKeyboardButton(
+            text="💳 Оплатить онлайн (bePaid)",
+            url=bepaid_url,
+        )])
+    buttons.append([InlineKeyboardButton(
+        text="💵 Перевод на карту",
+        callback_data="pay_by_card",
+    )])
+    buttons.append([InlineKeyboardButton(text="🔙 Меню", callback_data="menu")])
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
 
     text = (
         "💳 <b>Открытие доступа</b>\n\n"
         "Стоимость: <b>45 BYN</b>\n\n"
         "Выберите удобный способ оплаты:\n\n"
-        f"🔹 <b>Онлайн (bePaid)</b> – моментальная автоматическая активация{auto_note}\n"
-        "🔹 <b>Перевод на карту</b> – ручная проверка администратором"
+        "🔹 <b>Онлайн</b> - моментальная автоматическая активация "
+        "+ электронный чек автоматически\n"
+        "🔹 <b>Перевод на карту</b> - ручная проверка администратором"
     )
 
     if callback.message:

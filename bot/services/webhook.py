@@ -159,15 +159,73 @@ async def _activate_user(bot: Bot, telegram_id: int, transaction_id: str) -> Non
         logger.info("Day 1 sent to user %s", telegram_id)
 
 
+async def handle_expresspay_webhook(request: web.Request) -> web.Response:
+    """Process incoming Express-pay payment notification.
+
+    Express-pay sends POST when invoice is paid.
+    AccountNo field contains telegram_id (set during invoice creation).
+    """
+    try:
+        body = await request.read()
+        if len(body) > 1_048_576:
+            return web.Response(status=413, text="Payload too large")
+        data = json.loads(body)
+    except Exception as exc:
+        logger.error("Express-pay webhook parse error: %s", exc)
+        return web.Response(status=400, text="Bad request")
+
+    logger.info(
+        "Express-pay webhook received: %s",
+        json.dumps(data, ensure_ascii=False)[:500],
+    )
+
+    # Verify webhook token if configured
+    if settings.expresspay_webhook_token:
+        token = request.headers.get("X-Api-Key", "") or request.query.get("token", "")
+        if token != settings.expresspay_webhook_token:
+            logger.warning("Express-pay webhook: invalid token")
+            return web.Response(status=401, text="Unauthorized")
+
+    # Express-pay sends: Status, AccountNo, Amount, InvoiceNo
+    status = str(data.get("Status", data.get("status", ""))).lower()
+    account_no = str(data.get("AccountNo", data.get("accountNo", "")))
+    invoice_no = str(data.get("InvoiceNo", data.get("invoiceNo", data.get("id", ""))))
+
+    # AccountNo = telegram_id set during invoice creation
+    if not account_no or not account_no.isdigit():
+        logger.warning("Express-pay webhook: missing or invalid AccountNo: %s", account_no)
+        return web.Response(status=200, text="OK")
+
+    telegram_id = int(account_no)
+
+    if status in ("success", "оплачен", "paid", "1"):
+        logger.info(
+            "Express-pay payment success: telegram_id=%s invoice=%s",
+            telegram_id,
+            invoice_no,
+        )
+        bot: Bot = request.app["bot"]
+        await _activate_user(bot, telegram_id, f"expresspay_{invoice_no}")
+    else:
+        logger.info(
+            "Express-pay payment status '%s' for telegram_id=%s — ignoring",
+            status,
+            telegram_id,
+        )
+
+    return web.Response(status=200, text="OK")
+
+
 async def health_check(request: web.Request) -> web.Response:
     """Simple health check endpoint."""
     return web.Response(text="OK")
 
 
 def create_webhook_app(bot: Bot) -> web.Application:
-    """Create aiohttp web app for bePaid webhooks."""
+    """Create aiohttp web app for payment webhooks."""
     app = web.Application()
     app["bot"] = bot
     app.router.add_post("/webhook/bepaid", handle_bepaid_webhook)
+    app.router.add_post("/webhook/expresspay", handle_expresspay_webhook)
     app.router.add_get("/health", health_check)
     return app
