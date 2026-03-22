@@ -1,10 +1,11 @@
 """Express-pay.by API client — invoice creation and webhook handling.
 
-Creates payment invoices via Express-pay API.
-When client pays, Express-pay sends webhook → bot activates user access.
-
-API docs: https://api.express-pay.by/v1/
-Auth: Token passed as query parameter (not Bearer header).
+API docs: https://express-pay.by/docs/api/v1
+Endpoints:
+  POST /v1/web_cardinvoices  — card payment (returns FormUrl + InvoiceUrl)
+  POST /v1/web_invoices      — ERIP payment (returns InvoiceUrl)
+Auth: Token as query parameter.
+Currency: 933 = BYN.
 """
 
 from __future__ import annotations
@@ -20,12 +21,14 @@ from bot.core.config import settings
 logger = logging.getLogger(__name__)
 
 EXPRESSPAY_API_URL = "https://api.express-pay.by/v1/"
+BYN_CURRENCY_CODE = 933  # ISO 4217 numeric code for Belarusian Ruble
 
 
 async def create_invoice(telegram_id: int) -> str | None:
-    """Create Express-pay invoice and return payment URL.
+    """Create Express-pay card invoice and return payment URL.
 
-    Returns payment URL string on success, None on failure.
+    Uses /web_cardinvoices endpoint (card payment).
+    Returns FormUrl (payment form) on success, None on failure.
     """
     if not settings.expresspay_api_key or not settings.expresspay_service_id:
         logger.warning("Express-pay not configured (missing api_key or service_id)")
@@ -36,13 +39,12 @@ async def create_invoice(telegram_id: int) -> str | None:
         "%Y-%m-%dT%H:%M:%S"
     )
 
-    # Express-pay uses Token as query param + PascalCase field names
     params = {
         "Token": settings.expresspay_api_key,
         "ServiceId": settings.expresspay_service_id,
         "AccountNo": str(telegram_id),
         "Amount": "45.00",
-        "Currency": "BYN",
+        "Currency": str(BYN_CURRENCY_CODE),
         "Expiration": expiration,
         "ReturnUrl": f"https://t.me/{settings.bot_username}?start=payment_success",
         "FailUrl": f"https://t.me/{settings.bot_username}?start=payment_fail",
@@ -52,37 +54,33 @@ async def create_invoice(telegram_id: int) -> str | None:
 
     try:
         async with aiohttp.ClientSession() as http:
-            # Try POST /webpayments (primary Express-pay endpoint)
             async with http.post(
-                f"{EXPRESSPAY_API_URL}webpayments",
+                f"{EXPRESSPAY_API_URL}web_cardinvoices",
                 params=params,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
                 body = await resp.text()
                 logger.info(
-                    "Express-pay /webpayments response for %s: status=%s body=%s",
+                    "Express-pay /web_cardinvoices for %s: status=%s body=%s",
                     telegram_id,
                     resp.status,
-                    body[:300],
+                    body[:400],
                 )
 
                 if resp.status in (200, 201):
+                    import json as _json
                     try:
-                        data = await resp.json(content_type=None)
-                    except Exception:
-                        import json as _json
                         data = _json.loads(body)
+                    except Exception:
+                        logger.error("Express-pay: failed to parse JSON: %s", body[:200])
+                        return None
 
-                    # Try various possible URL field names
+                    # Card invoice returns FormUrl (payment form) and InvoiceUrl (ERIP)
                     url = (
-                        data.get("Url")
-                        or data.get("url")
-                        or data.get("PaymentUrl")
-                        or data.get("paymentUrl")
+                        data.get("FormUrl")
                         or data.get("InvoiceUrl")
-                        or data.get("invoiceUrl")
-                        or data.get("RedirectUrl")
-                        or data.get("redirectUrl")
+                        or data.get("Url")
+                        or data.get("url")
                     )
                     if url:
                         logger.info(
@@ -92,10 +90,10 @@ async def create_invoice(telegram_id: int) -> str | None:
                         )
                         return str(url)
 
-                    logger.error("Express-pay: no URL field in response: %s", data)
+                    logger.error("Express-pay: no URL in response: %s", data)
                 else:
                     logger.error(
-                        "Express-pay API error %s: %s", resp.status, body[:300]
+                        "Express-pay API error %s: %s", resp.status, body[:400]
                     )
 
     except asyncio.TimeoutError:
