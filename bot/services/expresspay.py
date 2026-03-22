@@ -2,6 +2,9 @@
 
 Creates payment invoices via Express-pay API.
 When client pays, Express-pay sends webhook → bot activates user access.
+
+API docs: https://api.express-pay.by/v1/
+Auth: Token passed as query parameter (not Bearer header).
 """
 
 from __future__ import annotations
@@ -33,59 +36,66 @@ async def create_invoice(telegram_id: int) -> str | None:
         "%Y-%m-%dT%H:%M:%S"
     )
 
-    payload = {
-        "serviceId": int(settings.expresspay_service_id),
-        "accountNo": str(telegram_id),
-        "amount": 45.00,
-        "currency": "BYN",
-        "expiration": expiration,
-        "returnUrl": f"https://t.me/{settings.bot_username}?start=payment_success",
-        "failUrl": f"https://t.me/{settings.bot_username}?start=payment_fail",
-        "language": "ru",
-        "info": f"Графин - база знаний по инвестициям (ID: {telegram_id})",
-    }
-
-    headers = {
-        "Authorization": f"Bearer {settings.expresspay_api_key}",
-        "Content-Type": "application/json",
+    # Express-pay uses Token as query param + PascalCase field names
+    params = {
+        "Token": settings.expresspay_api_key,
+        "ServiceId": settings.expresspay_service_id,
+        "AccountNo": str(telegram_id),
+        "Amount": "45.00",
+        "Currency": "BYN",
+        "Expiration": expiration,
+        "ReturnUrl": f"https://t.me/{settings.bot_username}?start=payment_success",
+        "FailUrl": f"https://t.me/{settings.bot_username}?start=payment_fail",
+        "Language": "ru",
+        "Info": f"Графин - база знаний по инвестициям (ID: {telegram_id})",
     }
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{EXPRESSPAY_API_URL}invoices",
-                json=payload,
-                headers=headers,
+        async with aiohttp.ClientSession() as http:
+            # Try POST /webpayments (primary Express-pay endpoint)
+            async with http.post(
+                f"{EXPRESSPAY_API_URL}webpayments",
+                params=params,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
-                data = await resp.json()
+                body = await resp.text()
                 logger.info(
-                    "Express-pay invoice response for %s: status=%s",
+                    "Express-pay /webpayments response for %s: status=%s body=%s",
                     telegram_id,
                     resp.status,
+                    body[:300],
                 )
 
                 if resp.status in (200, 201):
-                    # Express-pay returns invoiceUrl or similar field
+                    try:
+                        data = await resp.json(content_type=None)
+                    except Exception:
+                        import json as _json
+                        data = _json.loads(body)
+
+                    # Try various possible URL field names
                     url = (
-                        data.get("invoiceUrl")
-                        or data.get("paymentUrl")
+                        data.get("Url")
                         or data.get("url")
+                        or data.get("PaymentUrl")
+                        or data.get("paymentUrl")
+                        or data.get("InvoiceUrl")
+                        or data.get("invoiceUrl")
+                        or data.get("RedirectUrl")
+                        or data.get("redirectUrl")
                     )
                     if url:
                         logger.info(
                             "Express-pay invoice created for %s: %s",
                             telegram_id,
-                            url[:60],
+                            str(url)[:80],
                         )
-                        return url
-                    else:
-                        logger.error(
-                            "Express-pay: no URL in response: %s", data
-                        )
+                        return str(url)
+
+                    logger.error("Express-pay: no URL field in response: %s", data)
                 else:
                     logger.error(
-                        "Express-pay API error %s: %s", resp.status, data
+                        "Express-pay API error %s: %s", resp.status, body[:300]
                     )
 
     except asyncio.TimeoutError:
