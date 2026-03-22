@@ -54,14 +54,17 @@ async def create_invoice(telegram_id: int) -> str | None:
 
     try:
         async with aiohttp.ClientSession() as http:
+            # Try card payment first, fallback to ERIP
+            endpoint = "web_cardinvoices"
             async with http.post(
-                f"{EXPRESSPAY_API_URL}web_cardinvoices",
+                f"{EXPRESSPAY_API_URL}{endpoint}",
                 params=params,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
                 body = await resp.text()
                 logger.info(
-                    "Express-pay /web_cardinvoices for %s: status=%s body=%s",
+                    "Express-pay /%s for %s: status=%s body=%s",
+                    endpoint,
                     telegram_id,
                     resp.status,
                     body[:400],
@@ -90,15 +93,68 @@ async def create_invoice(telegram_id: int) -> str | None:
                         )
                         return str(url)
 
-                    logger.error("Express-pay: no URL in response: %s", data)
+                    logger.error("Express-pay %s: no URL in response: %s", endpoint, data)
+
+                    # Fallback: try ERIP endpoint if card failed
+                    if endpoint == "web_cardinvoices":
+                        return await _try_erip_invoice(http, params, telegram_id)
                 else:
                     logger.error(
-                        "Express-pay API error %s: %s", resp.status, body[:400]
+                        "Express-pay %s API error %s: %s", endpoint, resp.status, body[:400]
                     )
+                    if endpoint == "web_cardinvoices":
+                        return await _try_erip_invoice(http, params, telegram_id)
 
     except asyncio.TimeoutError:
         logger.error("Express-pay API timeout for user %s", telegram_id)
     except Exception as exc:
         logger.error("Express-pay invoice creation failed: %s", exc)
+
+    return None
+
+
+async def _try_erip_invoice(
+    http: aiohttp.ClientSession,
+    params: dict,
+    telegram_id: int,
+) -> str | None:
+    """Fallback: try ERIP invoice if card invoice failed."""
+    try:
+        async with http.post(
+            f"{EXPRESSPAY_API_URL}web_invoices",
+            params=params,
+            timeout=aiohttp.ClientTimeout(total=10),
+        ) as resp:
+            body = await resp.text()
+            logger.info(
+                "Express-pay /web_invoices fallback for %s: status=%s body=%s",
+                telegram_id,
+                resp.status,
+                body[:400],
+            )
+
+            if resp.status in (200, 201):
+                import json as _json
+                try:
+                    data = _json.loads(body)
+                except Exception:
+                    return None
+
+                url = (
+                    data.get("InvoiceUrl")
+                    or data.get("Url")
+                    or data.get("FormUrl")
+                )
+                if url:
+                    logger.info(
+                        "Express-pay ERIP invoice for %s: %s",
+                        telegram_id,
+                        str(url)[:80],
+                    )
+                    return str(url)
+
+                logger.error("Express-pay ERIP: no URL: %s", data)
+    except Exception as exc:
+        logger.error("Express-pay ERIP fallback failed: %s", exc)
 
     return None
