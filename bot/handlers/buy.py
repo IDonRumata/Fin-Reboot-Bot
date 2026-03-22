@@ -31,7 +31,7 @@ async def cb_buy(callback: types.CallbackQuery) -> None:
         "<b>2. Предмет оферты</b>\n"
         "▸ Курс предоставляется в формате Telegram-бота\n"
         "▸ Доступ – 5 дней с момента активации\n"
-        "▸ Стоимость – <b>15 BYN</b>\n\n"
+        "▸ Стоимость – <b>45 BYN</b>\n\n"
         "<b>3. Условия</b>\n"
         "▸ Материалы содержат личный опыт автора и не являются "
         "индивидуальными инвестиционными рекомендациями\n"
@@ -94,7 +94,7 @@ async def cb_accept_oferta(
         return
 
     # Create pending payment
-    await repo.create_payment(session, user.id, amount=1500, payment_method="bepaid")
+    await repo.create_payment(session, user.id, amount=4500, payment_method="bepaid")
 
     # Try to create dynamic bePaid checkout with tracking_id
     payment_url = await _create_bepaid_checkout(callback.from_user.id)
@@ -118,8 +118,8 @@ async def cb_accept_oferta(
         auto_note = "\n✨ После оплаты курс активируется <b>автоматически</b>!"
 
     text = (
-        "💳 <b>Оплата курса</b>\n\n"
-        "Стоимость: <b>15 BYN</b>\n\n"
+        "💳 <b>Открытие доступа</b>\n\n"
+        "Стоимость: <b>45 BYN</b>\n\n"
         "Выберите удобный способ оплаты:\n\n"
         f"🔹 <b>Онлайн (bePaid)</b> – моментальная автоматическая активация{auto_note}\n"
         "🔹 <b>Перевод на карту</b> – ручная проверка администратором"
@@ -163,7 +163,7 @@ async def _create_bepaid_checkout(telegram_id: int) -> str:
             },
             "order": {
                 "currency": "BYN",
-                "amount": 1500,  # 15.00 BYN in cents
+                "amount": 4500,  # 45.00 BYN in cents
                 "description": f"Курс «Графин» (ID: {telegram_id})",
                 "tracking_id": str(telegram_id),
             },
@@ -207,7 +207,7 @@ async def cb_pay_by_card(
     await callback.answer()
     text = (
         "💵 <b>Перевод на карту</b>\n\n"
-        "Стоимость: <b>15 BYN</b>\n\n"
+        "Стоимость: <b>45 BYN</b>\n\n"
         "Переведите на карту:\n"
         "<code>4601 2202 6102 6578</code>\n"
         "Получатель: Дементьева Марина\n\n"

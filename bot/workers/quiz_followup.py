@@ -38,7 +38,7 @@ FOLLOWUP_MESSAGES = {
             "Сложный процент добавил: $8 000.\n\n"
             "Начать никогда не поздно. На курсе мы показываем "
             "конкретные шаги - от первого рубля до работающего портфеля.\n\n"
-            "💰 Стоимость: <b>15 BYN</b>"
+            "💰 Стоимость: <b>45 BYN</b>"
         ),
     },
     2: {
@@ -60,7 +60,7 @@ FOLLOWUP_MESSAGES = {
             '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
             '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
             '<a href="https://instagram.com/marina_dementjeva">Instagram</a>\n\n'
-            "💰 Стоимость: <b>15 BYN</b>"
+            "💰 Стоимость: <b>45 BYN</b>"
         ),
     },
     3: {
@@ -69,7 +69,7 @@ FOLLOWUP_MESSAGES = {
             "👋 <b>Последнее сообщение от нас</b>\n\n"
             "Мы не будем надоедать - это последнее напоминание.\n\n"
             "Просто один вопрос: что тебя останавливает?\n\n"
-            "Если дело в цене - курс стоит 15 BYN. "
+            "Если дело в цене - курс стоит 45 BYN. "
             "Это меньше двух чашек кофе.\n\n"
             "Если дело в сомнениях - мы понимаем. "
             "Но 90% людей так и не начинают инвестировать "
@@ -132,7 +132,7 @@ async def check_and_send_quiz_followups(bot: Bot) -> None:
         if next_step < 3:
             keyboard_buttons.append([
                 InlineKeyboardButton(
-                    text="💳 Купить курс за 15 BYN",
+                    text="💳 Открыть доступ за 45 BYN",
                     callback_data="buy",
                 )
             ])
