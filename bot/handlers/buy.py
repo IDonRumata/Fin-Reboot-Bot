@@ -116,10 +116,6 @@ async def cb_accept_oferta(
             text="💳 Оплатить онлайн (bePaid)",
             url=bepaid_url,
         )])
-    buttons.append([InlineKeyboardButton(
-        text="💵 Перевод на карту",
-        callback_data="pay_by_card",
-    )])
     buttons.append([InlineKeyboardButton(text="🔙 Меню", callback_data="menu")])
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -128,11 +124,10 @@ async def cb_accept_oferta(
         "💳 <b>Открытие доступа</b>\n\n"
         "Стоимость: <b>45 BYN</b>\n\n"
         "Выберите удобный способ оплаты:\n\n"
-        "🔹 <b>Express-pay</b> — оплата через ЕРИП (любой банк РБ). "
-        "Электронный чек автоматически\n"
-        "🔹 <b>bePaid</b> — оплата банковской картой\n"
-        "🔹 <b>Перевод на карту</b> — ручная проверка администратором\n\n"
-        "После онлайн-оплаты доступ откроется моментально ⚡"
+        "🔹 <b>Онлайн</b> — моментальная автоматическая активация + "
+        "электронный чек автоматически\n"
+        "🔹 <b>Картой</b> — оплата банковской картой (Visa/MC)\n\n"
+        "После оплаты доступ откроется моментально ⚡"
     )
 
     if callback.message:
