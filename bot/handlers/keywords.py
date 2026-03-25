@@ -54,7 +54,7 @@ async def kw_robot(message: types.Message, session: AsyncSession) -> None:
 
     if is_new:
         text = (
-            "🤖 <b>Форекс-робот</b>\n\n"
+            "🤖 <b>Торговый алгоритм</b>\n\n"
             "Отлично! Для записи на бесплатный месяц тестирования "
             "напишите боту 👉 @TestDriveFXrobot\n\n"
             "🎁 Первый месяц – бесплатно на демо-счёте!\n"
@@ -62,7 +62,7 @@ async def kw_robot(message: types.Message, session: AsyncSession) -> None:
         )
     else:
         text = (
-            "🤖 Вы уже оставляли заявку на робота.\n"
+            "🤖 Вы уже оставляли заявку на алгоритм.\n"
             "Напишите боту для записи: @TestDriveFXrobot"
         )
 
