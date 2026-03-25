@@ -37,15 +37,15 @@ async def cmd_admin(message: types.Message) -> None:
     text = (
         "🛠 <b>Админ-панель</b>\n\n"
         "Доступные команды:\n\n"
-        "/sync – Загрузить контент из CSV файла\n"
-        "/test_send <code>telegram_id day</code> – Тестовая отправка контента\n"
-        "/confirm_payment <code>telegram_id</code> – Подтвердить оплату вручную\n"
-        "/grant <code>telegram_id</code> – Бесплатный доступ (для знакомых)\n"
-        "/reset_user <code>telegram_id</code> – Полный сброс (квиз, оплата, прогресс)\n"
-        "/stats – Статистика бота\n"
-        "/export – Выгрузить данные квиза в CSV\n"
-        "/broadcast <code>текст</code> – Рассылка всем прошедшим квиз\n"
-        "/backup – Создать бэкап базы данных"
+        "/sync - Загрузить контент из CSV файла\n"
+        "/test_send <code>telegram_id day</code> - Тестовая отправка контента\n"
+        "/confirm_payment <code>telegram_id</code> - Подтвердить оплату вручную\n"
+        "/grant <code>telegram_id</code> - Бесплатный доступ (для знакомых)\n"
+        "/reset_user <code>telegram_id</code> - Полный сброс (квиз, оплата, прогресс)\n"
+        "/stats - Статистика бота\n"
+        "/export - Выгрузить данные квиза в CSV\n"
+        "/broadcast <code>текст</code> - Рассылка всем прошедшим квиз\n"
+        "/backup - Создать бэкап базы данных"
     )
     await message.answer(text)
 
@@ -110,8 +110,8 @@ async def cmd_stats(message: types.Message, session: AsyncSession) -> None:
             User.ab_group == "B", User.payment_status == PaymentStatus.paid
         )
     )).scalar() or 0
-    ab_a_conv = f"{ab_a_paid/ab_a_total*100:.1f}%" if ab_a_total > 0 else "—"
-    ab_b_conv = f"{ab_b_paid/ab_b_total*100:.1f}%" if ab_b_total > 0 else "—"
+    ab_a_conv = f"{ab_a_paid/ab_a_total*100:.1f}%" if ab_a_total > 0 else " -"
+    ab_b_conv = f"{ab_b_paid/ab_b_total*100:.1f}%" if ab_b_total > 0 else " -"
 
     text = (
         "📊 <b>Статистика</b>\n\n"
@@ -449,7 +449,7 @@ async def _import_csv(session: AsyncSession, path: Path) -> int:
                 session.add(block)
                 count += 1
             except (ValueError, KeyError) as exc:
-                logger.warning("Skipping CSV row: %s — %s", row, exc)
+                logger.warning("Skipping CSV row: %s - %s", row, exc)
 
     await session.commit()
     return count

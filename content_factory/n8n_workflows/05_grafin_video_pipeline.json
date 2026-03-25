@@ -1,0 +1,459 @@
+{
+  "name": "GraFin: Video Content Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * 1"
+            }
+          ]
+        }
+      },
+      "name": "Monday 09:00 Minsk",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [200, 300],
+      "notes": "Cron в UTC. Минск = UTC+3, поэтому 09:00 Минск = 06:00 UTC"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * 4"
+            }
+          ]
+        }
+      },
+      "name": "Thursday 09:00 Minsk",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [200, 550],
+      "notes": "Cron в UTC. Минск = UTC+3, поэтому 09:00 Минск = 06:00 UTC"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Определяем тему по номеру недели\nconst WEEKLY_TOPICS = [\n  ['pushup_invest_1', 'myth_1'],\n  ['trucker_1', 'edu_dca'],\n  ['pushup_invest_2', 'edu_etf'],\n  ['trucker_2', 'myth_2'],\n  ['pushup_invest_3', 'by_tax'],\n  ['trucker_3', 'edu_compound'],\n  ['myth_3', 'by_broker'],\n  ['grafin_what', 'grafin_vs_courses'],\n];\n\nconst now = new Date();\nconst weekNum = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (7 * 24 * 60 * 60 * 1000));\nconst weekTopics = WEEKLY_TOPICS[weekNum % WEEKLY_TOPICS.length];\n\n// Понедельник = индекс 0, Четверг = индекс 1\nconst dayOfWeek = now.getDay();\nconst topicIdx = dayOfWeek === 1 ? 0 : 1;\nconst topicId = weekTopics[topicIdx];\n\n// Дата старта челенджа\nconst challengeStart = new Date('2025-10-25');\nconst dayNumber = Math.floor((now - challengeStart) / (24 * 60 * 60 * 1000)) + 1;\nconst pushupCount = 10 + (dayNumber - 1);\n\nreturn [{\n  json: {\n    topic_id: topicId,\n    day_number: dayNumber,\n    pushup_count: pushupCount,\n    generated_date: now.toISOString().split('T')[0],\n    week_number: weekNum\n  }\n}];"
+      },
+      "name": "Select Topic",
+      "type": "n8n-nodes-base.code",
+      "position": [450, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/generate",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "topic_id",
+              "value": "={{ $json.topic_id }}"
+            },
+            {
+              "name": "include_video_script",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Generate Content via Python",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [700, 420],
+      "notes": "Вызывает Python API (@grafinwriter_bot). Таймаут 120 сек — Gemini генерация может быть долгой."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Формируем сообщение для ревью Андрею\nconst pkg = $input.first().json;\nconst topic = $('Select Topic').first().json;\n\nconst preview = [\n  `📦 <b>Новый контент-пакет готов!</b>`,\n  `🏷 Тема: <i>${pkg.topic || topic.topic_id}</i>`,\n  `📂 ID: <code>${topic.topic_id}</code>`,\n  `📅 Дата: ${topic.generated_date}`,\n  `💪 День ${topic.day_number}: ${topic.pushup_count} отжиманий`,\n  ``,\n  `${'─'.repeat(30)}`,\n  ``,\n  `🎬 <b>СКРИПТ ВИДЕО:</b>`,\n  pkg.tiktok_script ? pkg.tiktok_script.substring(0, 800) : '(не сгенерирован)',\n  ``,\n  `${'─'.repeat(30)}`,\n  ``,\n  `📱 <b>ПОСТ GRAFIN:</b>`,\n  pkg.grafin_post ? pkg.grafin_post.substring(0, 600) : '(не сгенерирован)',\n  ``,\n  `${'─'.repeat(30)}`,\n  ``,\n  `📲 <b>INSTAGRAM:</b>`,\n  pkg.instagram_caption ? pkg.instagram_caption.substring(0, 400) : '(не сгенерирован)',\n].join('\\n');\n\n// Обрезаем до лимита Telegram\nconst finalText = preview.length > 3900 \n  ? preview.substring(0, 3900) + '\\n\\n... [обрезано]'\n  : preview;\n\nreturn [{\n  json: {\n    preview_text: finalText,\n    topic_id: topic.topic_id,\n    full_package: pkg,\n    tiktok_script: pkg.tiktok_script || '',\n    tiktok_description: pkg.tiktok_description || '',\n    grafin_post: pkg.grafin_post || '',\n    instagram_caption: pkg.instagram_caption || '',\n    video_script: pkg.tiktok_script || '',\n  }\n}];"
+      },
+      "name": "Format Review Message",
+      "type": "n8n-nodes-base.code",
+      "position": [950, 420]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $vars.ANDREY_TELEGRAM_ID }}",
+        "text": "={{ $json.preview_text }}",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "reply_markup": {
+            "inline_keyboard": [
+              [
+                {
+                  "text": "✅ Опубликовать в ГраФин",
+                  "callback_data": "n8n_pub_grafin:{{ $json.topic_id }}"
+                }
+              ],
+              [
+                {
+                  "text": "📢 Опубликовать ВЕЗДЕ",
+                  "callback_data": "n8n_pub_all:{{ $json.topic_id }}"
+                }
+              ],
+              [
+                {
+                  "text": "🎬 Создать видео (HeyGen)",
+                  "callback_data": "n8n_video:{{ $json.topic_id }}"
+                },
+                {
+                  "text": "❌ Отклонить",
+                  "callback_data": "n8n_reject:{{ $json.topic_id }}"
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "name": "Send Review to Andrey",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1200, 420],
+      "credentials": {
+        "telegramApi": {
+          "name": "GraFin Writer Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "grafin-approval",
+        "options": {}
+      },
+      "name": "Approval Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [200, 850],
+      "webhookId": "grafin-approval",
+      "notes": "Python бот отправляет POST сюда после нажатия кнопки одобрения. Body: {action, topic_id, package}"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.action }}",
+              "operation": "equals",
+              "value2": "pub_grafin"
+            }
+          ]
+        }
+      },
+      "name": "Is Grafin Only?",
+      "type": "n8n-nodes-base.if",
+      "position": [450, 850]
+    },
+    {
+      "parameters": {
+        "chatId": "@roboowner",
+        "text": "={{ $json.body.grafin_post }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "name": "Publish to @roboowner",
+      "type": "n8n-nodes-base.telegram",
+      "position": [750, 750],
+      "credentials": {
+        "telegramApi": {
+          "name": "GraFin Writer Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $vars.ANDREY_TELEGRAM_ID }}",
+        "text": "=✅ Опубликовано в @roboowner!\n\n📌 Тема: {{ $json.body.topic_id }}\n⏰ {{ new Date().toLocaleString('ru-RU', {timeZone: 'Europe/Minsk'}) }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Confirm Grafin Published",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1000, 750],
+      "credentials": {
+        "telegramApi": {
+          "name": "GraFin Writer Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Подготавливаем данные для кросс-платформенной публикации\nconst body = $input.first().json.body;\n\nreturn [{\n  json: {\n    topic_id: body.topic_id,\n    grafin_post: body.grafin_post || '',\n    instagram_caption: body.instagram_caption || '',\n    tiktok_description: body.tiktok_description || '',\n    video_url: body.video_url || '',\n    has_video: !!(body.video_url),\n  }\n}];"
+      },
+      "name": "Prepare Cross-Platform Data",
+      "type": "n8n-nodes-base.code",
+      "position": [750, 1000]
+    },
+    {
+      "parameters": {
+        "chatId": "@roboowner",
+        "text": "={{ $json.grafin_post }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "name": "Publish to @roboowner (All)",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1000, 900],
+      "credentials": {
+        "telegramApi": {
+          "name": "GraFin Writer Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.has_video }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Has Video?",
+      "type": "n8n-nodes-base.if",
+      "position": [1000, 1100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.upload-post.com/api/upload/video",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $vars.UPLOAD_POST_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "video_url",
+              "value": "={{ $json.video_url }}"
+            },
+            {
+              "name": "platforms",
+              "value": "tiktok,instagram,youtube"
+            },
+            {
+              "name": "title",
+              "value": "={{ $json.tiktok_description }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.instagram_caption }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "Upload Video to Platforms",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1250, 1050],
+      "notes": "Upload-Post.com API — публикует видео в TikTok, Instagram Reels, YouTube Shorts одним вызовом. Требует подписку и API ключ."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $vars.ANDREY_TELEGRAM_ID }}",
+        "text": "=📢 <b>Контент опубликован ВЕЗДЕ!</b>\n\n✅ Telegram @roboowner\n{{ $json.has_video ? '✅ TikTok\\n✅ Instagram Reels\\n✅ YouTube Shorts' : '⏸ Видео не готово — TikTok/Instagram/YouTube пропущены' }}\n\n📌 Тема: {{ $('Prepare Cross-Platform Data').first().json.topic_id }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Confirm All Published",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1500, 1000],
+      "credentials": {
+        "telegramApi": {
+          "name": "GraFin Writer Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heygen.com/v2/video/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{ $vars.HEYGEN_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"video_inputs\": [\n    {\n      \"character\": {\n        \"type\": \"avatar\",\n        \"avatar_id\": \"{{ $vars.HEYGEN_AVATAR_ID }}\"\n      },\n      \"voice\": {\n        \"type\": \"text\",\n        \"input_text\": \"{{ $json.video_script }}\",\n        \"voice_id\": \"{{ $vars.HEYGEN_VOICE_ID }}\"\n      }\n    }\n  ],\n  \"dimension\": {\n    \"width\": 1080,\n    \"height\": 1920\n  },\n  \"aspect_ratio\": \"9:16\"\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "name": "Generate Video (HeyGen)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [200, 1250],
+      "notes": "Опционально: создаёт видео с ИИ-аватаром. Требует HeyGen Creator план ($29/мес). Отправляет скрипт → получает video_id для polling."
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.heygen.com/v1/video_status.get?video_id={{ $json.data.video_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{ $vars.HEYGEN_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Poll HeyGen Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 1250],
+      "notes": "Проверяет статус генерации видео. Обычно 3-5 минут."
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "name": "Wait 30s",
+      "type": "n8n-nodes-base.wait",
+      "position": [450, 1400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data.status }}",
+              "operation": "equals",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "name": "Video Ready?",
+      "type": "n8n-nodes-base.if",
+      "position": [700, 1250]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $vars.ANDREY_TELEGRAM_ID }}",
+        "text": "=🎬 <b>Видео готово!</b>\n\n🔗 {{ $json.data.video_url }}\n\nНажми '📢 Опубликовать ВЕЗДЕ' чтобы отправить на все платформы.",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send Video Link",
+      "type": "n8n-nodes-base.telegram",
+      "position": [950, 1200],
+      "credentials": {
+        "telegramApi": {
+          "name": "GraFin Writer Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Monday 09:00 Minsk": {
+      "main": [[{"node": "Select Topic", "type": "main", "index": 0}]]
+    },
+    "Thursday 09:00 Minsk": {
+      "main": [[{"node": "Select Topic", "type": "main", "index": 0}]]
+    },
+    "Select Topic": {
+      "main": [[{"node": "Generate Content via Python", "type": "main", "index": 0}]]
+    },
+    "Generate Content via Python": {
+      "main": [[{"node": "Format Review Message", "type": "main", "index": 0}]]
+    },
+    "Format Review Message": {
+      "main": [[{"node": "Send Review to Andrey", "type": "main", "index": 0}]]
+    },
+    "Approval Webhook": {
+      "main": [[{"node": "Is Grafin Only?", "type": "main", "index": 0}]]
+    },
+    "Is Grafin Only?": {
+      "main": [
+        [{"node": "Publish to @roboowner", "type": "main", "index": 0}],
+        [{"node": "Prepare Cross-Platform Data", "type": "main", "index": 0}]
+      ]
+    },
+    "Publish to @roboowner": {
+      "main": [[{"node": "Confirm Grafin Published", "type": "main", "index": 0}]]
+    },
+    "Prepare Cross-Platform Data": {
+      "main": [[
+        {"node": "Publish to @roboowner (All)", "type": "main", "index": 0},
+        {"node": "Has Video?", "type": "main", "index": 0}
+      ]]
+    },
+    "Has Video?": {
+      "main": [
+        [{"node": "Upload Video to Platforms", "type": "main", "index": 0}],
+        [{"node": "Confirm All Published", "type": "main", "index": 0}]
+      ]
+    },
+    "Upload Video to Platforms": {
+      "main": [[{"node": "Confirm All Published", "type": "main", "index": 0}]]
+    },
+    "Publish to @roboowner (All)": {
+      "main": [[]]
+    },
+    "Generate Video (HeyGen)": {
+      "main": [[{"node": "Poll HeyGen Status", "type": "main", "index": 0}]]
+    },
+    "Poll HeyGen Status": {
+      "main": [[{"node": "Video Ready?", "type": "main", "index": 0}]]
+    },
+    "Video Ready?": {
+      "main": [
+        [{"node": "Send Video Link", "type": "main", "index": 0}],
+        [{"node": "Wait 30s", "type": "main", "index": 0}]
+      ]
+    },
+    "Wait 30s": {
+      "main": [[{"node": "Poll HeyGen Status", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Minsk"
+  },
+  "_comment_setup": [
+    "НАСТРОЙКА ПЕРЕМЕННЫХ (Settings → Variables):",
+    "  ANDREY_TELEGRAM_ID     — Telegram ID Андрея",
+    "  HEYGEN_API_KEY          — API ключ HeyGen (опционально, план Creator $29/мес)",
+    "  HEYGEN_AVATAR_ID        — ID аватара в HeyGen (после загрузки видео)",
+    "  HEYGEN_VOICE_ID         — ID голоса в HeyGen",
+    "  UPLOAD_POST_API_KEY     — API ключ upload-post.com (для кросс-платформенной публикации)",
+    "",
+    "НАСТРОЙКА CREDENTIALS:",
+    "  GraFin Writer Bot — Telegram Bot API токен (@grafinwriter_bot)",
+    "",
+    "PYTHON API:",
+    "  Должен быть запущен: uvicorn api:app --port 8000",
+    "  Или через main.py: python main.py bot",
+    "",
+    "APPROVAL WEBHOOK:",
+    "  Python бот должен отправлять POST на http://localhost:5678/webhook/grafin-approval",
+    "  Body: { action: 'pub_grafin'|'pub_all', topic_id, grafin_post, instagram_caption, tiktok_description, video_url }"
+  ]
+}

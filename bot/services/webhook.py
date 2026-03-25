@@ -1,4 +1,4 @@
-"""bePaid webhook handler — automatic payment verification.
+"""bePaid webhook handler - automatic payment verification.
 
 Listens for POST notifications from bePaid when a payment succeeds.
 Automatically confirms payment and triggers Day 1 content delivery.
@@ -90,7 +90,7 @@ async def handle_bepaid_webhook(request: web.Request) -> web.Response:
         return web.Response(status=200, text="OK")
 
     else:
-        logger.info("Payment status '%s' for telegram_id=%s — ignoring", status, telegram_id)
+        logger.info("Payment status '%s' for telegram_id=%s - ignoring", status, telegram_id)
         return web.Response(status=200, text="OK")
 
 
@@ -130,7 +130,7 @@ async def _activate_user(bot: Bot, telegram_id: int, transaction_id: str) -> Non
         # Check if already paid (idempotency)
         from bot.database.models import PaymentStatus
         if user.payment_status == PaymentStatus.paid:
-            logger.info("User %s already paid — skipping", telegram_id)
+            logger.info("User %s already paid - skipping", telegram_id)
             return
 
         # Confirm payment
@@ -208,7 +208,7 @@ async def handle_expresspay_webhook(request: web.Request) -> web.Response:
         await _activate_user(bot, telegram_id, f"expresspay_{invoice_no}")
     else:
         logger.info(
-            "Express-pay payment status '%s' for telegram_id=%s — ignoring",
+            "Express-pay payment status '%s' for telegram_id=%s - ignoring",
             status,
             telegram_id,
         )

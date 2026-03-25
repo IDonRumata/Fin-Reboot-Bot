@@ -1,4 +1,4 @@
-"""/progress handler — show course progress bar."""
+"""/progress handler - show course progress bar."""
 
 from __future__ import annotations
 

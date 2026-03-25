@@ -1,4 +1,4 @@
-"""Reminders — send 48h reminders for incomplete tasks.
+"""Reminders - send 48h reminders for incomplete tasks.
 
 Replaces Fin_Reboot_Reminders n8n workflow.
 """
@@ -36,9 +36,9 @@ async def check_and_send_reminders(bot: Bot) -> None:
 
             text = (
                 f"👋 Привет!\n\n"
-                f"Ты на <b>Дне {day}</b> курса «Графин» – {title}.\n\n"
+                f"Ты на <b>Дне {day}</b> курса «Графин» - {title}.\n\n"
                 f"Ты ещё не отметил(а) задание как выполненное. Нужна помощь?\n\n"
-                f"Когда будешь готов(а) – нажми кнопку ниже:"
+                f"Когда будешь готов(а) - нажми кнопку ниже:"
             )
 
             keyboard = InlineKeyboardMarkup(

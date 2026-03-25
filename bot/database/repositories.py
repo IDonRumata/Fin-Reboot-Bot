@@ -1,4 +1,4 @@
-"""Database repository — async CRUD helpers used by handlers and services."""
+"""Database repository - async CRUD helpers used by handlers and services."""
 
 from __future__ import annotations
 
@@ -404,7 +404,7 @@ async def save_quiz_result(
 
 
 async def get_quiz_followup_users(session: AsyncSession) -> list[User]:
-    """Find users who completed the quiz but haven't paid — for follow-up chain."""
+    """Find users who completed the quiz but haven't paid - for follow-up chain."""
     stmt = (
         select(User)
         .where(
@@ -477,7 +477,7 @@ async def get_quiz_stats(session: AsyncSession) -> dict:
 
 
 async def get_all_quiz_users(session: AsyncSession) -> Sequence[User]:
-    """Get all users who completed the quiz — for /export and /broadcast."""
+    """Get all users who completed the quiz - for /export and /broadcast."""
     stmt = (
         select(User)
         .where(User.quiz_completed_at.isnot(None))

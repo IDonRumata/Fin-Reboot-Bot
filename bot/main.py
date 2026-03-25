@@ -1,4 +1,4 @@
-"""Main entry point — assembles bot, registers routers, starts polling."""
+"""Main entry point - assembles bot, registers routers, starts polling."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ async def on_startup(bot, **_kwargs) -> None:
             imported = await _import_csv(session, csv_path)
             logger.info("Auto-sync: loaded %d content blocks from CSV.", imported)
     else:
-        logger.warning("No CSV file found at %s — skipping auto-sync.", csv_path)
+        logger.warning("No CSV file found at %s - skipping auto-sync.", csv_path)
 
 
 async def main() -> None:

@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     expresspay_api_key: str = ""        # Настройки → Услуги → API → API ключ
     expresspay_service_id: str = ""     # Номер услуги (34197)
     expresspay_secret_word: str = ""    # Секретное слово из настроек Express-pay (цифровая подпись)
-    expresspay_webhook_token: str = ""  # Любой секрет — прописать в Express-pay кабинете
+    expresspay_webhook_token: str = ""  # Любой секрет - прописать в Express-pay кабинете
 
     # -- Misc --
     bot_username: str = "fin_reboot_bot"

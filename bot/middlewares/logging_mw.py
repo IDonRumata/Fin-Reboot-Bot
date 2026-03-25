@@ -1,4 +1,4 @@
-"""Logging middleware — logs every incoming update."""
+"""Logging middleware - logs every incoming update."""
 
 import logging
 from typing import Any, Awaitable, Callable

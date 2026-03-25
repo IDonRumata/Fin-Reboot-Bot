@@ -1,4 +1,4 @@
-"""bePaid payment integration — create checkout links and process webhooks."""
+"""bePaid payment integration - create checkout links and process webhooks."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Content delivery engine — replaces Fin_Reboot_Send_Content_v2 workflow.
+"""Content delivery engine - replaces Fin_Reboot_Send_Content_v2 workflow.
 
 Core function: send a sequence of content blocks to a user with delays,
 handling all 7 content types and errors gracefully.
@@ -117,7 +117,7 @@ async def send_single_block(
 
             case ContentType.photo:
                 if not _is_real_file_id(file_id):
-                    logger.warning("Skipping photo block %s — no real file_id", block.id)
+                    logger.warning("Skipping photo block %s - no real file_id", block.id)
                     return False
                 
                 photo_obj = file_id
@@ -137,7 +137,7 @@ async def send_single_block(
 
             case ContentType.video:
                 if not _is_real_file_id(file_id):
-                    logger.warning("Skipping video block %s — no real file_id", block.id)
+                    logger.warning("Skipping video block %s - no real file_id", block.id)
                     return False
                 await bot.send_video(
                     chat_id=chat_id,
@@ -148,7 +148,7 @@ async def send_single_block(
 
             case ContentType.video_note:
                 if not _is_real_file_id(file_id):
-                    logger.warning("Skipping video_note block %s — no real file_id", block.id)
+                    logger.warning("Skipping video_note block %s - no real file_id", block.id)
                     return False
 
                 video_note_obj = file_id
@@ -166,7 +166,7 @@ async def send_single_block(
 
             case ContentType.voice:
                 if not _is_real_file_id(file_id):
-                    logger.warning("Skipping voice block %s — no real file_id", block.id)
+                    logger.warning("Skipping voice block %s - no real file_id", block.id)
                     return False
                 await bot.send_voice(
                     chat_id=chat_id,
@@ -230,9 +230,9 @@ async def send_day_block(
 
 DAY_GREETINGS = {
     1: "Сегодня мы начинаем наш путь к финансовой свободе! 🚀",
-    2: "Продолжаем! Сегодня — стратегия защиты денег 🛡",
-    3: "Отлично, ты уже на полпути! Сегодня — криптокошелёк ₿",
-    4: "Почти у цели! Сегодня — брокерский счёт 📈",
+    2: "Продолжаем! Сегодня - стратегия защиты денег 🛡",
+    3: "Отлично, ты уже на полпути! Сегодня - криптокошелёк ₿",
+    4: "Почти у цели! Сегодня - брокерский счёт 📈",
     5: "Финальный рывок! Собираем портфель 🏆",
 }
 
@@ -254,7 +254,7 @@ async def send_full_day(
     # Streak counter
     streak = ""
     if day > 1:
-        streak = f"\n🔥 <i>{day} дней подряд — отличный темп!</i>"
+        streak = f"\n🔥 <i>{day} дней подряд - отличный темп!</i>"
 
     text = f"👋 <b>{name}, привет!</b>\n\n📅 <b>День {day}.</b> {greeting}{streak}"
     try:

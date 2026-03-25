@@ -1,15 +1,15 @@
-"""Express-pay.by API client — invoice creation with HMAC-SHA1 signature.
+"""Express-pay.by API client - invoice creation with HMAC-SHA1 signature.
 
 API docs: https://express-pay.by/docs/api/v1
 Endpoints:
-  POST /v1/web_cardinvoices  — card payment (returns FormUrl)
-  POST /v1/web_invoices      — ERIP payment (returns InvoiceUrl)
+  POST /v1/web_cardinvoices - card payment (returns FormUrl)
+  POST /v1/web_invoices - ERIP payment (returns InvoiceUrl)
 
 For web_ endpoints:
-  - Token is included in signature computation but REMOVED from POST body.
-  - Data is sent as POST form body (not query params).
-  - Amount uses comma as decimal separator ("45,00").
-  - ReturnType=json to get URL in response.
+ - Token is included in signature computation but REMOVED from POST body.
+ - Data is sent as POST form body (not query params).
+ - Amount uses comma as decimal separator ("45,00").
+ - ReturnType=json to get URL in response.
 
 Auth: HMAC-SHA1 signature (uppercase hex) using secret word.
 Currency: 933 = BYN.

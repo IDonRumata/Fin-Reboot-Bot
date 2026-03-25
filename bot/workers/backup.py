@@ -1,4 +1,4 @@
-"""Daily database backup — pg_dump → gzip → send to Telegram admin.
+"""Daily database backup - pg_dump → gzip → send to Telegram admin.
 
 Runs as a scheduled job at 3:00 AM daily. Keeps the last 7 backups
 on disk and sends each new backup as a Telegram document.
@@ -85,7 +85,7 @@ async def create_and_send_backup(bot: Bot, send_to_chat_id: int | None = None) -
         backup_bytes = gz_path.read_bytes()
         doc = BufferedInputFile(backup_bytes, filename=gz_filename)
         caption = (
-            f"📦 <b>Бэкап БД</b> — {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
+            f"📦 <b>Бэкап БД</b> - {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
             f"📏 Размер: {file_size_kb:.1f} KB"
         )
 

@@ -1,4 +1,4 @@
-"""Day Scheduler – checks every N minutes for users ready for the next day.
+"""Day Scheduler - checks every N minutes for users ready for the next day.
 
 Replaces Fin_Reboot_Day_Scheduler_v2 n8n workflow.
 """

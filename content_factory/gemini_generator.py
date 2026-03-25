@@ -21,7 +21,7 @@ _client = genai.Client(api_key=GEMINI_API_KEY)
 _MODEL = "gemini-2.5-flash"
 _GENERATE_CFG = types.GenerateContentConfig(
     temperature=0.85,
-    max_output_tokens=2048,
+    max_output_tokens=4096,
 )
 
 
@@ -51,6 +51,19 @@ class ContentGenerator:
         self.model = _MODEL
         self.output_dir = Path("content_output")
         self.output_dir.mkdir(exist_ok=True)
+
+    @property
+    def topics(self):
+        return CONTENT_TOPICS
+
+    def get_next_topic_id(self) -> str | None:
+        """Возвращает ID темы для следующей публикации (по кругу, на основе файлов в output)."""
+        used = {f.stem.split("_", 2)[-1][:20] for f in self.output_dir.glob("*.json")}
+        for t in CONTENT_TOPICS:
+            if not any(t["id"][:15] in u for u in used):
+                return t["id"]
+        # Все темы использованы — начинаем по кругу
+        return CONTENT_TOPICS[0]["id"] if CONTENT_TOPICS else None
 
     def generate_tiktok_script(self, topic_id: str) -> dict:
         """Генерирует скрипт для TikTok/Reels по ID темы."""
