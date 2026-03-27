@@ -97,20 +97,11 @@ async def cb_accept_oferta(
 
     telegram_id = callback.from_user.id
 
-    # Try Express-pay first (EPOS receipt auto-generated)
-    from bot.services.expresspay import create_invoice
-    expresspay_url = await create_invoice(telegram_id)
-
-    # Try bePaid as fallback
+    # Create bePaid checkout
     bepaid_url = await _create_bepaid_checkout(telegram_id)
 
-    # Build keyboard based on available payment methods
+    # Build keyboard
     buttons = []
-    if expresspay_url:
-        buttons.append([InlineKeyboardButton(
-            text="💳 Оплатить онлайн (Express-pay)",
-            url=expresspay_url,
-        )])
     if bepaid_url:
         buttons.append([InlineKeyboardButton(
             text="💳 Оплатить онлайн (bePaid)",
@@ -123,11 +114,11 @@ async def cb_accept_oferta(
     text = (
         "💳 <b>Открытие доступа</b>\n\n"
         "Стоимость: <b>45 BYN</b>\n\n"
-        "Выберите удобный способ оплаты:\n\n"
-        "🔹 <b>Онлайн</b> - моментальная автоматическая активация + "
-        "электронный чек автоматически\n"
-        "🔹 <b>Картой</b> - оплата банковской картой (Visa/MC)\n\n"
-        "После оплаты доступ откроется моментально ⚡"
+        "Оплата банковской картой (Visa/MC) — "
+        "моментальная автоматическая активация.\n\n"
+        "После оплаты доступ откроется моментально ⚡\n\n"
+        f"Если возникли сложности с оплатой или оплатили, "
+        f"но курс не начался — напишите {settings.support_username}"
     )
 
     if callback.message:
@@ -159,7 +150,7 @@ async def _create_bepaid_checkout(telegram_id: int) -> str:
                 "success_url": "https://t.me/fin_reboot_bot?start=payment_success",
                 "decline_url": "https://t.me/fin_reboot_bot?start=payment_fail",
                 "fail_url": "https://t.me/fin_reboot_bot?start=payment_fail",
-                "notification_url": settings.bepaid_notification_url or f"http://185.229.251.166:{settings.webhook_port}/webhook/bepaid",
+                "notification_url": settings.bepaid_notification_url or f"http://85.117.235.247:{settings.webhook_port}/webhook/bepaid",
                 "language": "ru",
                 "customer_fields": {
                     "visible": ["email"],

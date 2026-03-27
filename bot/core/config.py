@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     bepaid_checkout_url: str = "https://checkout.bepaid.by/ctp/api/checkouts"
     bepaid_payment_url: str = "https://checkout.bepaid.by/v2/confirm_order/prd_74d43b5eb24b4f0c/33685"
     bepaid_webhook_secret: str = ""  # from bePaid dashboard → Products → Webhook
-    bepaid_notification_url: str = ""  # public URL for bePaid callbacks, e.g. http://185.229.251.166:8443/webhook/bepaid
+    bepaid_notification_url: str = ""  # public URL for bePaid callbacks, e.g. http://85.117.235.247:8443/webhook/bepaid
 
     # -- Webhook server --
     webhook_host: str = "0.0.0.0"

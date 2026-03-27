@@ -226,6 +226,5 @@ def create_webhook_app(bot: Bot) -> web.Application:
     app = web.Application()
     app["bot"] = bot
     app.router.add_post("/webhook/bepaid", handle_bepaid_webhook)
-    app.router.add_post("/webhook/expresspay", handle_expresspay_webhook)
     app.router.add_get("/health", health_check)
     return app
