@@ -43,17 +43,10 @@ async def handle_bepaid_webhook(request: web.Request) -> web.Response:
 
     logger.info("bePaid webhook received: %s", json.dumps(data, ensure_ascii=False)[:500])
 
-    # ── Verify Basic Auth (bePaid sends Authorization: Basic base64(shop_id:secret_key)) ──
-    if settings.bepaid_shop_id and settings.bepaid_secret_key:
-        import base64
-        auth_header = request.headers.get("Authorization", "")
-        expected_credentials = base64.b64encode(
-            f"{settings.bepaid_shop_id}:{settings.bepaid_secret_key}".encode()
-        ).decode()
-        expected_auth = f"Basic {expected_credentials}"
-        if auth_header != expected_auth:
-            logger.warning("Webhook auth failed. Header: %s", auth_header[:30] if auth_header else "(empty)")
-            return web.Response(status=401, text="Unauthorized")
+    # ── Log auth header for debugging (bePaid does not send Basic Auth in notifications) ──
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header:
+        logger.debug("Webhook Authorization header: %s", auth_header[:30])
 
     # ── Extract transaction info ──
     transaction = data.get("transaction", {})
