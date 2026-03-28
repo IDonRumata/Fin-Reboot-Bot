@@ -12,7 +12,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.database.engine import async_session
 from bot.database import repositories as repo
-from bot.utils.facts import get_fact_and_quote
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +34,11 @@ async def check_and_send_reminders(bot: Bot) -> None:
             day = entry["day"]
             title = entry["title"]
 
-            daily_content = get_fact_and_quote(user.telegram_id)
             text = (
                 f"👋 Привет!\n\n"
-                f"Ты на <b>Дне {day}</b> курса «Графин» — {title}.\n\n"
+                f"Ты на <b>Дне {day}</b> курса «Графин» - {title}.\n\n"
                 f"Ты ещё не отметил(а) задание как выполненное. Нужна помощь?\n\n"
-                f"{daily_content}\n\n"
-                f"Когда будешь готов(а) — нажми кнопку ниже:"
+                f"Когда будешь готов(а) - нажми кнопку ниже:"
             )
 
             keyboard = InlineKeyboardMarkup(

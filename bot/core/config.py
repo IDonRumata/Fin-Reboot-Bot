@@ -39,10 +39,6 @@ class Settings(BaseSettings):
     expresspay_secret_word: str = ""    # Секретное слово из настроек Express-pay (цифровая подпись)
     expresspay_webhook_token: str = ""  # Любой секрет - прописать в Express-pay кабинете
 
-    # -- AI Assistant (Groq) --
-    groq_api_key: str = ""
-    groq_model: str = "llama-3.1-70b-versatile"
-
     # -- Misc --
     bot_username: str = "fin_reboot_bot"
     support_username: str = "@suportfinreboot_bot"

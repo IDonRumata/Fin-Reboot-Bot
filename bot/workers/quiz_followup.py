@@ -21,27 +21,25 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.database import repositories as repo
 from bot.database.engine import async_session
-from bot.utils.facts import get_daily_fact
 
 logger = logging.getLogger(__name__)
 
 # ──────────────────── Followup messages ───────────────────────
 
-def _build_followup_1(telegram_id: int) -> str:
-    """Build message 1 with a daily rotating financial fact."""
-    fact = get_daily_fact(telegram_id)
-    return (
-        f"{fact}\n\n"
-        "Начать никогда не поздно. На курсе «Графин» мы показываем "
-        "конкретные шаги — от первого рубля до работающего портфеля.\n\n"
-        "💰 Стоимость: <b>45 BYN</b>"
-    )
-
-
 FOLLOWUP_MESSAGES = {
     1: {
         "delay_hours": 1,
-        "text": None,  # dynamic — see _build_followup_1()
+        "text": (
+            "💡 <b>Кстати, знал(а)?</b>\n\n"
+            "Если бы ты начал(а) откладывать всего $50 в месяц "
+            "10 лет назад и вкладывал(а) в S&P 500 - "
+            "сейчас на счету было бы <b>~$14 000</b>.\n\n"
+            "Вложения: $6 000.\n"
+            "Сложный процент добавил: $8 000.\n\n"
+            "Начать никогда не поздно. На курсе мы показываем "
+            "конкретные шаги - от первого рубля до работающего портфеля.\n\n"
+            "💰 Стоимость: <b>45 BYN</b>"
+        ),
     },
     2: {
         "delay_hours": 24,
@@ -116,12 +114,6 @@ async def check_and_send_quiz_followups(bot: Bot) -> None:
         if not followup:
             continue
 
-        # Build dynamic text for step 1
-        if next_step == 1:
-            followup_text = _build_followup_1(user.telegram_id)
-        else:
-            followup_text = followup["text"]
-
         # Check if enough time has passed
         reference_time = user.quiz_followup_last_at or user.quiz_completed_at
         if not reference_time:
@@ -152,7 +144,7 @@ async def check_and_send_quiz_followups(bot: Bot) -> None:
         try:
             await bot.send_message(
                 chat_id=user.telegram_id,
-                text=followup_text,
+                text=followup["text"],
                 reply_markup=keyboard,
             )
             sent_count += 1
