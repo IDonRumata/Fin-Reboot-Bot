@@ -21,6 +21,9 @@ from bot.database.engine import async_session
 logger = logging.getLogger(__name__)
 router = Router(name="quiz")
 
+# Держим ссылки на фоновые задачи — без этого GC их убивает
+_background_tasks: set = set()
+
 
 # ──────────────────────── FSM States ──────────────────────────
 
@@ -607,7 +610,8 @@ async def process_name(
     await state.clear()
 
     # Запускаем фоновую воронку (шаги 2-4)
-    asyncio.create_task(
+    # Сохраняем ссылку в set — иначе GC уничтожит задачу до завершения
+    task = asyncio.create_task(
         _send_funnel_delayed(
             bot=message.bot,
             telegram_id=message.from_user.id,
@@ -616,6 +620,8 @@ async def process_name(
             session_factory=async_session,
         )
     )
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
 
 @router.callback_query(F.data == "quiz_want_more")
