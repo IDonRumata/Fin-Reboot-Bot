@@ -135,14 +135,37 @@ async def _activate_user(bot: Bot, telegram_id: int, transaction_id: str) -> Non
             "━━━━━━━━━━━━━━━━━━━\n"
             "✅ <b>ОПЛАТА ПОДТВЕРЖДЕНА!</b>\n"
             "━━━━━━━━━━━━━━━━━━━\n\n"
-            "Спасибо за покупку программы «Графин»! 🎉\n\n"
-            "👉 Присоединяйтесь к нашему чату участников "
-            "для общения и обратной связи:\n"
-            f"{settings.participants_chat_url}\n\n"
+            "Спасибо за покупку «Графина»! 🎉\n\n"
+            '👉 <a href="' + settings.participants_chat_url + '">Чат участников</a> '
+            "— присоединяйся для общения и обратной связи\n\n"
             "📚 Первый день программы начнётся через несколько секунд!"
         )
+        checklist_text = (
+            "━━━━━━━━━━━━━━━━━━━\n"
+            "🎁 <b>БОНУС: Первая инвестиция за 15 минут</b>\n"
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "7 шагов — от нуля до работающего портфеля:\n\n"
+            "1️⃣ <b>Определи сумму старта</b>\n"
+            "Хватит даже 50 BYN / $20. Главное — начать.\n\n"
+            "2️⃣ <b>Скачай приложение брокера</b>\n"
+            "Freedom Finance, Interactive Brokers или Trading 212.\n\n"
+            "3️⃣ <b>Пройди верификацию</b>\n"
+            "Паспорт + селфи. 5 минут.\n\n"
+            "4️⃣ <b>Пополни счёт</b>\n"
+            "Банковский перевод или карта.\n\n"
+            "5️⃣ <b>Купи 1 долю ETF на S&P 500</b>\n"
+            "Тикер: VOO, SPY или CSPX — 500 компаний в одной покупке.\n\n"
+            "6️⃣ <b>Настрой автопополнение</b>\n"
+            "Раз в месяц фиксированная сумма. Без эмоций.\n\n"
+            "7️⃣ <b>Забудь на год. Серьёзно.</b>\n"
+            "Сложный процент работает на тех, кто не дёргается.\n\n"
+            "Подробнее — в курсе. Поехали! 🚀"
+        )
+
         try:
-            await bot.send_message(chat_id=telegram_id, text=confirm_text)
+            await bot.send_message(chat_id=telegram_id, text=confirm_text, disable_web_page_preview=True)
+            await asyncio.sleep(3)
+            await bot.send_message(chat_id=telegram_id, text=checklist_text)
         except Exception as exc:
             logger.error("Failed to notify user %s: %s", telegram_id, exc)
 

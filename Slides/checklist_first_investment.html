@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280,height=720">
+<title>Чек-лист: Первая инвестиция за 15 минут</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1280px;height:720px;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif}
+.slide{
+  width:1280px;height:720px;
+  background:linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 40%,#16213e 70%,#0f3460 100%);
+  color:#fff;position:relative;display:flex;flex-direction:column;padding:40px 60px;
+}
+.slide::before{
+  content:'';position:absolute;top:0;right:0;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(212,175,55,.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.slide::after{
+  content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;
+  background:linear-gradient(90deg,#d4af37,#f4d03f,#d4af37);
+}
+
+.header{display:flex;align-items:center;gap:20px;margin-bottom:30px}
+.badge{
+  background:linear-gradient(135deg,#d4af37,#f4d03f);color:#0a0a0a;
+  font-size:13px;font-weight:800;padding:6px 16px;border-radius:20px;
+  text-transform:uppercase;letter-spacing:1.5px;
+}
+h1{font-size:32px;font-weight:800;letter-spacing:1px;
+  background:linear-gradient(90deg,#fff,#d4af37);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:14px 40px;flex:1}
+.step{display:flex;align-items:flex-start;gap:14px}
+.step-num{
+  min-width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,#d4af37,#f4d03f);
+  color:#0a0a0a;font-size:16px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:2px;
+}
+.step-content h3{font-size:17px;font-weight:700;margin-bottom:3px;color:#fff}
+.step-content p{font-size:13px;color:rgba(255,255,255,.6);line-height:1.4}
+
+.footer{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:20px;padding-top:16px;
+  border-top:1px solid rgba(212,175,55,.2);
+}
+.footer-left{font-size:14px;color:rgba(255,255,255,.4)}
+.footer-right{
+  font-size:13px;font-weight:700;color:#d4af37;
+  letter-spacing:1px;text-transform:uppercase;
+}
+.checkmark{color:#d4af37;font-size:14px;margin-right:4px}
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="header">
+    <div class="badge">Бонус</div>
+    <h1>Первая инвестиция за 15 минут</h1>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Определи сумму старта</h3>
+        <p>Хватит даже 50 BYN / $20. Главное — начать, а не ждать «большие деньги».</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Скачай приложение брокера</h3>
+        <p>Freedom Finance, Interactive Brokers или Trading 212. Всё с телефона.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Пройди верификацию</h3>
+        <p>Паспорт + селфи. Занимает 5 минут, одобрение — от часа до суток.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Пополни счёт</h3>
+        <p>Банковский перевод или карта. Минимум зависит от брокера (обычно от $1).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h3>Купи 1 долю ETF на S&P 500</h3>
+        <p>Ищи тикер VOO, SPY или CSPX. Это 500 крупнейших компаний мира в одной покупке.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h3>Настрой автопополнение</h3>
+        <p>Раз в месяц фиксированная сумма. Автоматически, без эмоций и раздумий.</p>
+      </div>
+    </div>
+    <div class="step" style="grid-column:1/3;justify-content:center">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <h3>Забудь на год. Серьёзно.</h3>
+        <p>Не проверяй каждый день. Сложный процент работает на тех, кто не дёргается. Через год — посмотришь и удивишься.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-left"><span class="checkmark">&#10003;</span> Чек-лист для участников «Графина»</div>
+    <div class="footer-right">grafin.bot</div>
+  </div>
+</div>
+</body>
+</html>

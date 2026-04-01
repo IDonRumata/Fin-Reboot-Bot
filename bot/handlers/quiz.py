@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.core.config import settings
 from bot.database import repositories as repo
+from bot.database.engine import async_session
 
 logger = logging.getLogger(__name__)
 router = Router(name="quiz")
@@ -183,6 +184,176 @@ RESULT_TEXTS = {
         "В боте покажем стратегию и наш личный инструмент-ускоритель 📈"
     ),
 }
+
+# ──────────── Personalized Breakdown (3 points) ─────────────
+
+PERSONAL_BREAKDOWN = {
+    "A": (
+        "📋 <b>{name}, твой персональный разбор:</b>\n\n"
+        "✅ <b>Что ты делаешь правильно:</b>\n"
+        "Ценишь стабильность. Не бросаешься в рискованные схемы. "
+        "Это хорошая база.\n\n"
+        "⚠️ <b>Где теряешь:</b>\n"
+        "Пока деньги «просто лежат» — инфляция съедает ~7-15% в год. "
+        "За 5 лет ты теряешь до 30% покупательной силы. "
+        "1 000 BYN сегодня = 700 BYN через 5 лет.\n\n"
+        "🎯 <b>Что делать:</b>\n"
+        "Начать с минимального риска — индексный фонд. "
+        "Даже 50 BYN в месяц — это уже работающие деньги, а не тающие."
+    ),
+    "B": (
+        "📋 <b>{name}, твой персональный разбор:</b>\n\n"
+        "✅ <b>Что ты делаешь правильно:</b>\n"
+        "Ты уже ищешь информацию и понимаешь, что деньги должны работать. "
+        "Ты в идеальной точке старта.\n\n"
+        "⚠️ <b>Где теряешь:</b>\n"
+        "Знаешь, что надо действовать, но откладываешь. "
+        "Каждый месяц без инвестиций — это упущенный сложный процент. "
+        "Год промедления = тысячи потерянных BYN через 10 лет.\n\n"
+        "🎯 <b>Что делать:</b>\n"
+        "Первый шаг — открыть брокерский счёт. "
+        "Это занимает 15 минут и ни к чему не обязывает."
+    ),
+    "C": (
+        "📋 <b>{name}, твой персональный разбор:</b>\n\n"
+        "✅ <b>Что ты делаешь правильно:</b>\n"
+        "Ты уже думаешь как инвестор. Есть мотивация и даже опыт. "
+        "Это больше, чем у 90% людей.\n\n"
+        "⚠️ <b>Где теряешь:</b>\n"
+        "Хаотичные действия без стратегии — это не инвестирование, "
+        "а угадайка. Без системы ты теряешь на комиссиях, "
+        "эмоциональных решениях и неправильном распределении.\n\n"
+        "🎯 <b>Что делать:</b>\n"
+        "Создать чёткую систему: сколько, куда, когда. "
+        "Автоматизировать, чтобы эмоции не мешали."
+    ),
+}
+
+# ──────────── Funnel Step Texts ─────────────────────────────
+
+CALC_EXAMPLE_TEXT = (
+    "📊 <b>Давай посчитаем на реальных цифрах</b>\n\n"
+    "У тебя 1 000 BYN. Два варианта:\n\n"
+    "🏦 <b>Вклад под 5% годовых (5 лет):</b>\n"
+    "→ 1 276 BYN (+276)\n\n"
+    "📈 <b>Индексный фонд ~10% годовых (5 лет):</b>\n"
+    "→ 1 611 BYN (+611)\n\n"
+    "Разница: <b>+335 BYN</b> с одной тысячи.\n\n"
+    "━━━━━━━━━━━━━━━━━━━\n\n"
+    "А теперь представь: ты откладываешь <b>200 BYN каждый месяц</b>:\n\n"
+    "🏦 Вклад за 5 лет: 13 601 BYN\n"
+    "📈 Индексный фонд: 15 487 BYN\n\n"
+    "Разница: <b>+1 886 BYN</b>.\n"
+    "Это и есть цена незнания."
+)
+
+AUTHORS_AND_PROOF_TEXT = (
+    "👥 <b>Кто мы?</b>\n\n"
+    "👩 <b>Марина Дементьева</b> — 20 лет в инвестициях. "
+    "С 2010 года не работает в найме — живёт на пассивный доход "
+    "от недвижимости и инвестиций.\n"
+    '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
+    '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
+    '<a href="https://instagram.com/marina_dementjeva">Instagram</a>\n\n'
+    "👨 <b>Андрей Мороз</b> — дальнобойщик, строит капитал прямо в рейсах. "
+    "С 25 октября 2025 делает +1 отжимание каждый день — "
+    "годовой челлендж. С деньгами работает то же самое.\n"
+    '<a href="https://tiktok.com/@krononchill">TikTok</a>  '
+    '<a href="https://youtube.com/@andreimarozv">YouTube</a>  '
+    '<a href="https://instagram.com/krononchill">Instagram</a>\n\n'
+    "━━━━━━━━━━━━━━━━━━━\n\n"
+    "💬 <b>Отзывы:</b>\n\n"
+    "«Я думала, инвестиции — это сложно и для богатых. "
+    "После курса открыла счёт и купила первый ETF. "
+    "Заняло реально 15 минут.» — <i>Ольга, Минск</i>\n\n"
+    "«Дальнобойщик, как и Андрей. Начал откладывать $50 в рейсе. "
+    "Через 4 месяца на счету уже $230. Мелочь, но работает.» — <i>Сергей, Гомель</i>"
+)
+
+
+def _build_offer_text(name: str) -> str:
+    return (
+        "━━━━━━━━━━━━━━━━━━━\n"
+        f"🔥 <b>«Графин»</b> — база знаний по инвестициям\n"
+        "━━━━━━━━━━━━━━━━━━━\n\n"
+        f"{name}, мы не делали курс.\n\n"
+        "Курсов по инвестициям — завались. Мы сделали другое: "
+        "бот, который ведёт тебя за руку к первым реальным шагам.\n\n"
+        "Внутри 5 дней:\n"
+        "📅 День 1 — Снимаем розовые очки. Финансовый рентген\n"
+        "📅 День 2 — Где и как открыть брокерский счёт\n"
+        "📅 День 3 — Первая покупка: ETF и крипта\n"
+        "📅 День 4 — Стратегия и автоматизация\n"
+        "📅 День 5 — Твой личный план на год\n\n"
+        "Гарантия: не понравится — вернём деньги.\n\n"
+        "💰 Стоимость: <b>45 BYN</b> — разовый доступ, навсегда."
+    )
+
+
+OFFER_KEYBOARD = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(
+            text="💳 Начать за 45 BYN",
+            callback_data="buy",
+        )],
+        [InlineKeyboardButton(
+            text="📋 Подробнее о программе",
+            callback_data="about",
+        )],
+        [InlineKeyboardButton(
+            text="⏳ Подумаю",
+            callback_data="quiz_later",
+        )],
+    ]
+)
+
+
+# ──────────── Background Funnel Task ────────────────────────
+
+async def _send_funnel_delayed(
+    bot,
+    telegram_id: int,
+    name: str,
+    user_type: str,
+    session_factory,
+) -> None:
+    """Background: send funnel steps 2-4 with delays after quiz result."""
+    import asyncio
+    from bot.database.models import PaymentStatus
+
+    async def _user_paid() -> bool:
+        async with session_factory() as s:
+            u = await repo.get_user_by_telegram_id(s, telegram_id)
+            return u is not None and u.payment_status == PaymentStatus.paid
+
+    try:
+        # ── Шаг 2: Интерактивный пример (через 3 мин) ──
+        await asyncio.sleep(180)
+        if await _user_paid():
+            return
+        calc_kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="💡 Хочу узнать, как это сделать", callback_data="quiz_want_more")],
+        ])
+        await bot.send_message(telegram_id, CALC_EXAMPLE_TEXT, reply_markup=calc_kb)
+
+        # ── Шаг 3: Авторы + соц. доказательство (через 5 мин) ──
+        await asyncio.sleep(300)
+        if await _user_paid():
+            return
+        await bot.send_message(
+            telegram_id, AUTHORS_AND_PROOF_TEXT, disable_web_page_preview=True,
+        )
+
+        # ── Шаг 4: Оффер (через 2 мин) ──
+        await asyncio.sleep(120)
+        if await _user_paid():
+            return
+        await bot.send_message(
+            telegram_id, _build_offer_text(name), reply_markup=OFFER_KEYBOARD,
+        )
+
+    except Exception as exc:
+        logger.error("Funnel delayed task failed for %s: %s", telegram_id, exc)
 
 
 # ──────────────── Question state mapping ──────────────────────
@@ -376,15 +547,19 @@ async def process_name(
 
     await state.set_state(QuizStates.finished)
 
-    # Send result
+    # ── Шаг 1: Результат + персональный разбор ──
     result_text = RESULT_TEXTS[user_type].format(name=name)
+    breakdown = PERSONAL_BREAKDOWN[user_type].format(name=name)
     await message.answer(result_text)
 
-    # Small delay, then lead magnet
     import asyncio
     await asyncio.sleep(2)
 
-    # Lead magnet - tax cheatsheet
+    await message.answer(breakdown)
+
+    await asyncio.sleep(2)
+
+    # Лид-магнит — шпаргалка по налогам
     lead_magnet_text = (
         "━━━━━━━━━━━━━━━━━━━\n"
         "🎁 <b>Твой подарок: Шпаргалка по налогам</b>\n"
@@ -419,62 +594,24 @@ async def process_name(
     )
     await message.answer(lead_magnet_text, reply_markup=tax_keyboard)
 
-    await asyncio.sleep(2)
-
-    # Authors block
-    authors_text = (
-        "👥 <b>Кто стоит за курсом?</b>\n\n"
-        "👩 <b>Марина Дементьева</b> - 20 лет в инвестициях, "
-        "с 2010 года не работает в найме - живёт на пассивный доход\n"
-        '<a href="https://tiktok.com/@dementjeva17">TikTok</a>  '
-        '<a href="https://youtube.com/@МаринаДементьева/shorts">YouTube</a>  '
-        '<a href="https://instagram.com/marina_dementjeva">Instagram</a>\n\n'
-        "👨 <b>Андрей Мороз</b> - дальнобойщик, строит капитал прямо в рейсах\n"
-        "С 25 октября 2025 делает +1 отжимание каждый день - "
-        "годовой челлендж. Говорит: с деньгами работает то же самое.\n"
-        '<a href="https://tiktok.com/@krononchill">TikTok</a>  '
-        '<a href="https://youtube.com/@andreimarozv">YouTube</a>  '
-        '<a href="https://instagram.com/krononchill">Instagram</a>'
-    )
-    await message.answer(authors_text, disable_web_page_preview=True)
-
-    await asyncio.sleep(2)
-
-    # Course offer
-    offer_text = (
-        "━━━━━━━━━━━━━━━━━━━\n"
-        "🔥 <b>«Графин»</b> - база знаний по инвестициям\n"
-        "━━━━━━━━━━━━━━━━━━━\n\n"
-        f"{name}, мы не делали курс.\n\n"
-        "Курсов по инвестициям - завались. Мы сделали другое: "
-        "бот, который ведёт тебя за руку к первым реальным шагам.\n\n"
-        "Внутри:\n"
-        "📋 Пошаговая регистрация на биржах\n"
-        "₿ Первая покупка криптовалюты - вместе\n"
-        "📊 Мини-калькулятор и шпаргалки\n"
-        "🗂 Стратегия под твой уровень\n\n"
-        "Без дедлайнов. В своём темпе. Зашёл - сделал - пошёл дальше.\n\n"
-        "💰 Стоимость: <b>45 BYN</b> - разовый доступ, навсегда."
-    )
-    offer_keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(
-                text="💳 Открыть доступ за 45 BYN",
-                callback_data="buy",
-            )],
-            [InlineKeyboardButton(
-                text="📋 Подробнее о программе",
-                callback_data="about",
-            )],
-            [InlineKeyboardButton(
-                text="⏳ Подумаю",
-                callback_data="quiz_later",
-            )],
-        ]
-    )
-    await message.answer(offer_text, reply_markup=offer_keyboard)
-
     await state.clear()
+
+    # Запускаем фоновую воронку (шаги 2-4)
+    asyncio.create_task(
+        _send_funnel_delayed(
+            bot=message.bot,
+            telegram_id=message.from_user.id,
+            name=name,
+            user_type=user_type,
+            session_factory=async_session,
+        )
+    )
+
+
+@router.callback_query(F.data == "quiz_want_more")
+async def quiz_want_more(callback: types.CallbackQuery) -> None:
+    """User clicked 'want to know more' from calculator step."""
+    await callback.answer("Отличный выбор!")
 
 
 @router.callback_query(F.data == "quiz_later")
