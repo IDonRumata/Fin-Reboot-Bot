@@ -211,8 +211,8 @@ PERSONAL_BREAKDOWN = {
         "Каждый месяц без инвестиций — это упущенный сложный процент. "
         "Год промедления = тысячи потерянных BYN через 10 лет.\n\n"
         "🎯 <b>Что делать:</b>\n"
-        "Первый шаг — открыть брокерский счёт. "
-        "Это занимает 15 минут и ни к чему не обязывает."
+        "Определить сумму, которую не жалко откладывать ежемесячно. "
+        "Даже 50 BYN — это старт. Система важнее суммы."
     ),
     "C": (
         "📋 <b>{name}, твой персональный разбор:</b>\n\n"
@@ -327,25 +327,25 @@ async def _send_funnel_delayed(
             return u is not None and u.payment_status == PaymentStatus.paid
 
     try:
-        # ── Шаг 2: Интерактивный пример (через 3 мин) ──
-        await asyncio.sleep(180)
+        # ── Шаг 2: Интерактивный пример (через 60 сек) ──
+        await asyncio.sleep(60)
         if await _user_paid():
             return
         calc_kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="💡 Хочу узнать, как это сделать", callback_data="quiz_want_more")],
+            [InlineKeyboardButton(text="💡 Хочу узнать, как это исправить", callback_data="quiz_want_more")],
         ])
         await bot.send_message(telegram_id, CALC_EXAMPLE_TEXT, reply_markup=calc_kb)
 
-        # ── Шаг 3: Авторы + соц. доказательство (через 5 мин) ──
-        await asyncio.sleep(300)
+        # ── Шаг 3: Авторы + соц. доказательство (через 90 сек) ──
+        await asyncio.sleep(90)
         if await _user_paid():
             return
         await bot.send_message(
             telegram_id, AUTHORS_AND_PROOF_TEXT, disable_web_page_preview=True,
         )
 
-        # ── Шаг 4: Оффер (через 2 мин) ──
-        await asyncio.sleep(120)
+        # ── Шаг 4: Оффер (через 60 сек) ──
+        await asyncio.sleep(60)
         if await _user_paid():
             return
         await bot.send_message(
@@ -593,6 +593,16 @@ async def process_name(
         ]
     )
     await message.answer(lead_magnet_text, reply_markup=tax_keyboard)
+
+    await asyncio.sleep(3)
+
+    # Bridge — чтобы не было тишины
+    await message.answer(
+        "📊 Шпаргалка твоя — пользуйся!\n\n"
+        "Через минуту покажу кое-что ещё: "
+        "посчитаем на реальных цифрах, сколько теряет "
+        "тот, кто держит деньги на вкладе вместо индекса 👇"
+    )
 
     await state.clear()
 
