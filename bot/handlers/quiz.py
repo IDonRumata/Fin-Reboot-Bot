@@ -21,8 +21,6 @@ from bot.database.engine import async_session
 logger = logging.getLogger(__name__)
 router = Router(name="quiz")
 
-# Держим ссылки на фоновые задачи — без этого GC их убивает
-_background_tasks: set = set()
 
 
 # ──────────────────────── FSM States ──────────────────────────
@@ -311,53 +309,6 @@ OFFER_KEYBOARD = InlineKeyboardMarkup(
 )
 
 
-# ──────────── Background Funnel Task ────────────────────────
-
-async def _send_funnel_delayed(
-    bot,
-    telegram_id: int,
-    name: str,
-    user_type: str,
-    session_factory,
-) -> None:
-    """Background: send funnel steps 2-4 with delays after quiz result."""
-    import asyncio
-    from bot.database.models import PaymentStatus
-
-    async def _user_paid() -> bool:
-        async with session_factory() as s:
-            u = await repo.get_user_by_telegram_id(s, telegram_id)
-            return u is not None and u.payment_status == PaymentStatus.paid
-
-    try:
-        # ── Шаг 2: Интерактивный пример (через 60 сек) ──
-        await asyncio.sleep(60)
-        if await _user_paid():
-            return
-        calc_kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="💡 Хочу узнать, как это исправить", callback_data="quiz_want_more")],
-        ])
-        await bot.send_message(telegram_id, CALC_EXAMPLE_TEXT, reply_markup=calc_kb)
-
-        # ── Шаг 3: Авторы + соц. доказательство (через 90 сек) ──
-        await asyncio.sleep(90)
-        if await _user_paid():
-            return
-        await bot.send_message(
-            telegram_id, AUTHORS_AND_PROOF_TEXT, disable_web_page_preview=True,
-        )
-
-        # ── Шаг 4: Оффер (через 60 сек) ──
-        await asyncio.sleep(60)
-        if await _user_paid():
-            return
-        await bot.send_message(
-            telegram_id, _build_offer_text(name), reply_markup=OFFER_KEYBOARD,
-        )
-
-    except Exception as exc:
-        logger.error("Funnel delayed task failed for %s: %s", telegram_id, exc)
-
 
 # ──────────────── Question state mapping ──────────────────────
 
@@ -597,31 +548,25 @@ async def process_name(
     )
     await message.answer(lead_magnet_text, reply_markup=tax_keyboard)
 
-    await asyncio.sleep(3)
-
-    # Bridge — чтобы не было тишины
-    await message.answer(
-        "📊 Шпаргалка твоя — пользуйся!\n\n"
-        "Через минуту покажу кое-что ещё: "
-        "посчитаем на реальных цифрах, сколько теряет "
-        "тот, кто держит деньги на вкладе вместо индекса 👇"
-    )
-
     await state.clear()
 
-    # Запускаем фоновую воронку (шаги 2-4)
-    # Сохраняем ссылку в set — иначе GC уничтожит задачу до завершения
-    task = asyncio.create_task(
-        _send_funnel_delayed(
-            bot=message.bot,
-            telegram_id=message.from_user.id,
-            name=name,
-            user_type=user_type,
-            session_factory=async_session,
-        )
-    )
-    _background_tasks.add(task)
-    task.add_done_callback(_background_tasks.discard)
+    await asyncio.sleep(5)
+
+    # ── Шаг 2: Интерактивный пример ──
+    calc_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💡 Хочу узнать, как это исправить", callback_data="quiz_want_more")],
+    ])
+    await message.answer(CALC_EXAMPLE_TEXT, reply_markup=calc_kb)
+
+    await asyncio.sleep(5)
+
+    # ── Шаг 3: Авторы + социальное доказательство ──
+    await message.answer(AUTHORS_AND_PROOF_TEXT, disable_web_page_preview=True)
+
+    await asyncio.sleep(5)
+
+    # ── Шаг 4: Оффер ──
+    await message.answer(_build_offer_text(name), reply_markup=OFFER_KEYBOARD)
 
 
 @router.callback_query(F.data == "quiz_want_more")
