@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1280,height=720">
-<title>Чек-лист: Первая инвестиция за 15 минут</title>
+<title>Чек-лист: Подготовка к первой инвестиции</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{width:1280px;height:720px;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif}
@@ -22,104 +22,108 @@ body{width:1280px;height:720px;overflow:hidden;font-family:'Segoe UI',Arial,sans
   background:linear-gradient(90deg,#d4af37,#f4d03f,#d4af37);
 }
 
-.header{display:flex;align-items:center;gap:20px;margin-bottom:30px}
+.header{display:flex;align-items:center;gap:20px;margin-bottom:28px}
 .badge{
   background:linear-gradient(135deg,#d4af37,#f4d03f);color:#0a0a0a;
   font-size:13px;font-weight:800;padding:6px 16px;border-radius:20px;
   text-transform:uppercase;letter-spacing:1.5px;
 }
-h1{font-size:32px;font-weight:800;letter-spacing:1px;
+.title-block{}
+h1{font-size:30px;font-weight:800;letter-spacing:.5px;
   background:linear-gradient(90deg,#fff,#d4af37);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1.2;
 }
+h1 span{font-size:15px;font-weight:400;display:block;margin-top:4px;
+  -webkit-text-fill-color:rgba(255,255,255,.45);letter-spacing:0}
 
-.steps{display:grid;grid-template-columns:1fr 1fr;gap:14px 40px;flex:1}
-.step{display:flex;align-items:flex-start;gap:14px}
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:13px 44px;flex:1}
+.step{display:flex;align-items:flex-start;gap:13px}
 .step-num{
-  min-width:36px;height:36px;border-radius:50%;
+  min-width:34px;height:34px;border-radius:50%;
   background:linear-gradient(135deg,#d4af37,#f4d03f);
-  color:#0a0a0a;font-size:16px;font-weight:800;
+  color:#0a0a0a;font-size:15px;font-weight:800;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;margin-top:2px;
 }
-.step-content h3{font-size:17px;font-weight:700;margin-bottom:3px;color:#fff}
-.step-content p{font-size:13px;color:rgba(255,255,255,.6);line-height:1.4}
+.step-content h3{font-size:16px;font-weight:700;margin-bottom:3px;color:#fff}
+.step-content p{font-size:12.5px;color:rgba(255,255,255,.57);line-height:1.45}
 
 .footer{
   display:flex;justify-content:space-between;align-items:center;
-  margin-top:20px;padding-top:16px;
+  margin-top:18px;padding-top:14px;
   border-top:1px solid rgba(212,175,55,.2);
 }
-.footer-left{font-size:14px;color:rgba(255,255,255,.4)}
-.footer-right{
-  font-size:13px;font-weight:700;color:#d4af37;
-  letter-spacing:1px;text-transform:uppercase;
-}
-.checkmark{color:#d4af37;font-size:14px;margin-right:4px}
+.footer-left{font-size:13px;color:rgba(255,255,255,.35)}
+.footer-right{font-size:13px;font-weight:700;color:#d4af37;letter-spacing:1px;text-transform:uppercase}
 </style>
 </head>
 <body>
 <div class="slide">
   <div class="header">
     <div class="badge">Бонус</div>
-    <h1>Первая инвестиция за 15 минут</h1>
+    <div class="title-block">
+      <h1>Подготовься к первой инвестиции
+        <span>7 вопросов, которые стоит задать себе до начала</span>
+      </h1>
+    </div>
   </div>
 
   <div class="steps">
     <div class="step">
       <div class="step-num">1</div>
       <div class="step-content">
-        <h3>Определи сумму старта</h3>
-        <p>Хватит даже 50 BYN / $20. Главное — начать, а не ждать «большие деньги».</p>
+        <h3>Сколько могу откладывать ежемесячно?</h3>
+        <p>Посчитай реальную сумму — не «хотелось бы», а ту, которую не заметишь. Даже 50 BYN — это старт.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-content">
-        <h3>Скачай приложение брокера</h3>
-        <p>Freedom Finance, Interactive Brokers или Trading 212. Всё с телефона.</p>
+        <h3>Есть ли подушка безопасности?</h3>
+        <p>3–6 месячных расходов в резерве. Инвестировать без подушки — рисковать необходимыми деньгами.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
       <div class="step-content">
-        <h3>Пройди верификацию</h3>
-        <p>Паспорт + селфи. Занимает 5 минут, одобрение — от часа до суток.</p>
+        <h3>Какая моя финансовая цель?</h3>
+        <p>Конкретная сумма и срок: «100 000 BYN через 10 лет» — это план. «Хочу больше денег» — это мечта.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num">4</div>
       <div class="step-content">
-        <h3>Пополни счёт</h3>
-        <p>Банковский перевод или карта. Минимум зависит от брокера (обычно от $1).</p>
+        <h3>Готов(а) ли я к просадкам?</h3>
+        <p>Инвестиции временно падают. Если увидишь –20% — продашь в панике или подождёшь? Честный ответ важен.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num">5</div>
       <div class="step-content">
-        <h3>Купи 1 долю ETF на S&P 500</h3>
-        <p>Ищи тикер VOO, SPY или CSPX. Это 500 крупнейших компаний мира в одной покупке.</p>
+        <h3>На какой срок инвестирую?</h3>
+        <p>До 3 лет — инструменты одни, от 5 лет — другие. Срок определяет стратегию.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num">6</div>
       <div class="step-content">
-        <h3>Настрой автопополнение</h3>
-        <p>Раз в месяц фиксированная сумма. Автоматически, без эмоций и раздумий.</p>
+        <h3>Есть ли долги с высоким %?</h3>
+        <p>Кредит под 20% годовых — сначала гаси его. Инвестиции редко дают больше стоимости долга.</p>
       </div>
     </div>
-    <div class="step" style="grid-column:1/3;justify-content:center">
+    <div class="step" style="grid-column:1/3">
       <div class="step-num">7</div>
       <div class="step-content">
-        <h3>Забудь на год. Серьёзно.</h3>
-        <p>Не проверяй каждый день. Сложный процент работает на тех, кто не дёргается. Через год — посмотришь и удивишься.</p>
+        <h3>Зачем мне это? Мой личный «почему»</h3>
+        <p>Запиши одним предложением: ради чего ты начинаешь. Финансовая свобода? Спокойствие? Пенсия без нищеты? В трудный момент именно это не даст бросить.</p>
       </div>
     </div>
   </div>
 
   <div class="footer">
-    <div class="footer-left"><span class="checkmark">&#10003;</span> Чек-лист для участников «Графина»</div>
-    <div class="footer-right">grafin.bot</div>
+    <div class="footer-left">Чек-лист для участников «Графина» · ответы на эти вопросы разберём в курсе</div>
+    <div class="footer-right">Графин</div>
   </div>
 </div>
 </body>
