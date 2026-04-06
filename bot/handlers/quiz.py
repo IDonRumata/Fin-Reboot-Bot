@@ -261,14 +261,7 @@ AUTHORS_AND_PROOF_TEXT = (
     "годовой челлендж. С деньгами работает то же самое.\n"
     '<a href="https://tiktok.com/@krononchill">TikTok</a>  '
     '<a href="https://youtube.com/@andreimarozv">YouTube</a>  '
-    '<a href="https://instagram.com/krononchill">Instagram</a>\n\n'
-    "━━━━━━━━━━━━━━━━━━━\n\n"
-    "💬 <b>Отзывы:</b>\n\n"
-    "«Я думала, инвестиции - это сложно и для богатых. "
-    "После курса открыла счёт и купила первый ETF. "
-    "Заняло реально 15 минут.» - <i>Ольга, Минск</i>\n\n"
-    "«Дальнобойщик, как и Андрей. Начал откладывать $50 в рейсе. "
-    "Через 4 месяца на счету уже $230. Мелочь, но работает.» - <i>Сергей, Гомель</i>"
+    '<a href="https://instagram.com/krononchill">Instagram</a>'
 )
 
 
