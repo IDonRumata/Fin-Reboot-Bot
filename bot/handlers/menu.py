@@ -25,6 +25,7 @@ MENU_KEYBOARD = InlineKeyboardMarkup(
             url=settings.webapp_tracker_url,
         )],
         [InlineKeyboardButton(text="📝 Шпаргалка по налогам", callback_data="tax_cheatsheet")],
+        [InlineKeyboardButton(text="📖 Словарик инвестора", callback_data="terms")],
         [InlineKeyboardButton(text="🆘 Поддержка", callback_data="support")],
         [InlineKeyboardButton(text="📜 Оферта", callback_data="oferta")],
     ]
@@ -116,6 +117,46 @@ async def cb_tax_cheatsheet(callback: types.CallbackQuery) -> None:
     )
     if callback.message:
         await callback.message.answer(text, reply_markup=TAX_CHEATSHEET_KEYBOARD)  # type: ignore[union-attr]
+
+
+TERMS_TEXT = (
+    "━━━━━━━━━━━━━━━━━━━\n"
+    "📖 <b>Словарик инвестора</b>\n"
+    "━━━━━━━━━━━━━━━━━━━\n\n"
+    "<b>Акция</b> - доля в компании. Купил акцию Apple - стал совладельцем Apple.\n\n"
+    "<b>Облигация</b> - долговая расписка. Даёшь деньги государству или компании в долг "
+    "под фиксированный процент. Надёжнее акций, но доходность ниже.\n\n"
+    "<b>ETF (индексный фонд)</b> - «корзина» из акций сотен компаний сразу. "
+    "Один ETF на S&P 500 - и ты владеешь кусочком Apple, Google, Microsoft и ещё 497 других.\n\n"
+    "<b>S&P 500</b> - индекс 500 крупнейших компаний США. "
+    "Исторический рост - 10-12% в год за последние 30 лет.\n\n"
+    "<b>DCA (усреднение)</b> - вкладывать одинаковую сумму регулярно, независимо от цены. "
+    "Покупаешь и дёшево, и дорого - получаешь среднюю цену.\n\n"
+    "<b>Дивиденды</b> - часть прибыли, которую компания платит акционерам. "
+    "Пассивный доход без продажи акций.\n\n"
+    "<b>Диверсификация</b> - не класть все яйца в одну корзину. "
+    "Распределить деньги между разными инструментами, странами, валютами.\n\n"
+    "<b>Волатильность</b> - насколько сильно колеблется цена актива. "
+    "Биткоин - высокая. Гособлигации - низкая.\n\n"
+    "<b>Подушка безопасности</b> - резерв на 3-6 месяцев расходов на депозите в USD/EUR. "
+    "Создаётся до начала инвестирования.\n\n"
+    "<b>Брокер</b> - посредник между вами и биржей. "
+    "Через него покупаются акции и ETF (Freedom Finance, Interactive Brokers).\n\n"
+    "<b>Портфель</b> - набор всех ваших инвестиций. "
+    "Должен соответствовать вашему горизонту и готовности к риску."
+)
+
+
+@router.callback_query(F.data == "terms")
+async def cb_terms(callback: types.CallbackQuery) -> None:
+    await callback.answer()
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🔙 Меню", callback_data="menu")],
+        ]
+    )
+    if callback.message:
+        await callback.message.answer(TERMS_TEXT, reply_markup=keyboard)  # type: ignore[union-attr]
 
 
 @router.callback_query(F.data == "support")
