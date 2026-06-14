@@ -197,19 +197,19 @@ async def cmd_confirm_payment(
         "👉 Присоединяйтесь к нашему чату участников "
         "для общения и обратной связи:\n"
         f"{settings.participants_chat_url}\n\n"
-        "📚 Первый день программы начнётся через несколько секунд!"
+        "📚 Вводный модуль начнётся через несколько секунд!"
     )
     try:
-        await bot.send_message(chat_id=telegram_id, text=confirm_text)
+        await bot.send_message(chat_id=telegram_id, text=confirm_text, parse_mode="HTML")
     except Exception as exc:
         logger.error("Failed to notify user %s: %s", telegram_id, exc)
 
-    # Trigger Day 1
+    # Trigger Module 0
     import asyncio
-    await asyncio.sleep(5)
-    await send_full_day(bot, session, telegram_id, user.id, day=1)
+    await asyncio.sleep(3)
+    await send_full_day(bot, session, telegram_id, user.id, day=0)
 
-    await message.answer(f"✅ Оплата для {telegram_id} подтверждена, День 1 отправлен.")
+    await message.answer(f"✅ Оплата для {telegram_id} подтверждена, Модуль 0 отправлен.")
 
 
 @router.message(Command("sync"))
@@ -357,17 +357,18 @@ async def cmd_grant(
                 "🎁 <b>ВАМ ОТКРЫТ ДОСТУП!</b>\n"
                 "━━━━━━━━━━━━━━━━━━━\n\n"
                 "Добро пожаловать в программу «Графин»! 🎉\n\n"
-                "📚 Первый день программы начнётся через несколько секунд!"
+                "📚 Вводный модуль начнётся через несколько секунд!"
             ),
+            parse_mode="HTML",
         )
     except Exception as exc:
         logger.error("Failed to notify user %s: %s", telegram_id, exc)
 
     import asyncio
-    await asyncio.sleep(5)
-    await send_full_day(bot, session, telegram_id, user.id, day=1)
+    await asyncio.sleep(3)
+    await send_full_day(bot, session, telegram_id, user.id, day=0)
 
-    await message.answer(f"✅ Бесплатный доступ для {telegram_id} выдан, День 1 отправлен.")
+    await message.answer(f"✅ Бесплатный доступ для {telegram_id} выдан, Модуль 0 отправлен.")
 
 
 @router.message(Command("reset_user"))

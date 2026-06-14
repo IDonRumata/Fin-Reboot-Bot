@@ -522,7 +522,7 @@ async def reset_user(session: AsyncSession, telegram_id: int) -> bool:
     progress = await get_progress(session, user.id)
     if progress:
         progress.current_day = 1
-        for day in range(1, 6):
+        for day in range(0, 6):
             setattr(progress, f"day_{day}_status", DayStatus.not_started)
             setattr(progress, f"day_{day}_current_block", 0)
             setattr(progress, f"day_{day}_sent_at", None)
