@@ -1,5 +1,5 @@
 day,block,order,type,file_id,content,caption,button_text,button_callback,parse_mode,delay_seconds
-0,1,1,photo,0_1.png,,🎓 <b>Модуль 0: Почему денег не хватает</b>,,,,HTML,2
+0,1,1,photo,0_1.png,,🎓 <b>Модуль 0: Почему денег не хватает</b>,,,HTML,2
 0,1,2,text,,"Добро пожаловать в <b>ГраФин</b>!
 
 Прежде чем мы начнём говорить про инвестиции и акции — давайте честно ответим на один вопрос.
