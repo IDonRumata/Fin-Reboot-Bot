@@ -376,7 +376,7 @@ async def start_quiz(message: types.Message, state: FSMContext) -> None:
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🚀 Начать квиз!", callback_data="quiz_start")]
+            [InlineKeyboardButton(text="⚡ Начать квиз!", callback_data="quiz_start")]
         ]
     )
     await message.answer(welcome_text, reply_markup=keyboard)
@@ -621,13 +621,13 @@ _FV_RESULT_TEXTS = {
         "Это не приговор — это <b>стартовая точка</b>.\n\n"
         "Именно с неё начинали все финансово свободные люди. "
         "Курс даст вам чёткую последовательность шагов: от нуля до первых работающих инвестиций.\n\n"
-        "Главное — вы уже здесь. Это важнее, чем кажется. 💪"
+        "Главное — вы уже здесь. Это важнее, чем кажется. ⚡"
     ),
     "🟡": (
         "🟡 <b>Финансовый подросток</b>\n\n"
         "Хороший фундамент уже есть. Вы понимаете, что деньгами нужно управлять.\n\n"
         "Курс поможет добавить недостающие инструменты и выстроить <b>систему</b> — "
-        "чтобы деньги работали регулярно, а не от случая к случаю. 🚀"
+        "чтобы деньги работали регулярно, а не от случая к случаю. 💎"
     ),
     "🟢": (
         "🟢 <b>Финансово взрослый</b>\n\n"
@@ -640,8 +640,8 @@ _FV_RESULT_TEXTS = {
 
 def _fv_keyboard(q_id: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="✅ Да", callback_data=f"{q_id}_yes"),
-        InlineKeyboardButton(text="❌ Нет", callback_data=f"{q_id}_no"),
+        InlineKeyboardButton(text="◆ Да", callback_data=f"{q_id}_yes"),
+        InlineKeyboardButton(text="✗ Нет", callback_data=f"{q_id}_no"),
     ]])
 
 
@@ -689,7 +689,7 @@ async def _fv_process(
         badge = _fv_badge(score)
         result_text = _FV_RESULT_TEXTS[badge]
         done_kb = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🚀 Начинаем День 1!", callback_data="day_0_done"),
+            InlineKeyboardButton(text="⚡ Начинаем День 1!", callback_data="day_0_done"),
         ]])
         if callback.message:
             await callback.message.answer(result_text)  # type: ignore[union-attr]
