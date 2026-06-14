@@ -587,6 +587,145 @@ async def quiz_later(callback: types.CallbackQuery) -> None:
         await callback.message.answer(text, reply_markup=keyboard)  # type: ignore[union-attr]
 
 
+# ══════════════════════════════════════════════════════════════
+# Финансовый возраст — тест в Модуле 0 (после оплаты)
+# ══════════════════════════════════════════════════════════════
+
+class FinVozrastStates(StatesGroup):
+    fv_q1 = State()
+    fv_q2 = State()
+    fv_q3 = State()
+    fv_q4 = State()
+    fv_q5 = State()
+
+
+_FV_QUESTIONS = [
+    ("fv_q1", "❓ <b>Вопрос 1 из 5</b>\n\nЕсть ли у вас <b>финансовая подушка</b> — сбережения на 3 и более месяца ваших расходов?"),
+    ("fv_q2", "❓ <b>Вопрос 2 из 5</b>\n\nУ вас <b>нет</b> потребительских кредитов или рассрочек с высокой ставкой?"),
+    ("fv_q3", "❓ <b>Вопрос 3 из 5</b>\n\nВы <b>откладываете деньги каждый месяц</b>, пусть даже небольшую сумму?"),
+    ("fv_q4", "❓ <b>Вопрос 4 из 5</b>\n\nЕсть ли у вас <b>инвестиции</b> — акции, ETF, криптовалюта?"),
+    ("fv_q5", "❓ <b>Вопрос 5 из 5</b>\n\nЕсть ли у вас <b>конкретная финансовая цель</b> на ближайшие 3 года — сумма и срок?"),
+]
+
+_FV_STATE_ORDER = [
+    FinVozrastStates.fv_q1,
+    FinVozrastStates.fv_q2,
+    FinVozrastStates.fv_q3,
+    FinVozrastStates.fv_q4,
+    FinVozrastStates.fv_q5,
+]
+
+_FV_RESULT_TEXTS = {
+    "🔴": (
+        "🔴 <b>Финансовый ребёнок</b>\n\n"
+        "Это не приговор — это <b>стартовая точка</b>.\n\n"
+        "Именно с неё начинали все финансово свободные люди. "
+        "Курс даст вам чёткую последовательность шагов: от нуля до первых работающих инвестиций.\n\n"
+        "Главное — вы уже здесь. Это важнее, чем кажется. 💪"
+    ),
+    "🟡": (
+        "🟡 <b>Финансовый подросток</b>\n\n"
+        "Хороший фундамент уже есть. Вы понимаете, что деньгами нужно управлять.\n\n"
+        "Курс поможет добавить недостающие инструменты и выстроить <b>систему</b> — "
+        "чтобы деньги работали регулярно, а не от случая к случаю. 🚀"
+    ),
+    "🟢": (
+        "🟢 <b>Финансово взрослый</b>\n\n"
+        "Отличная база! Вы уже управляете деньгами осознанно.\n\n"
+        "Курс даст вам конкретные инструменты для <b>масштабирования</b>: "
+        "как распределить портфель и использовать сложный процент по максимуму. 📈"
+    ),
+}
+
+
+def _fv_keyboard(q_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="✅ Да", callback_data=f"{q_id}_yes"),
+        InlineKeyboardButton(text="❌ Нет", callback_data=f"{q_id}_no"),
+    ]])
+
+
+def _fv_badge(score: int) -> str:
+    if score <= 1:
+        return "🔴"
+    elif score <= 3:
+        return "🟡"
+    return "🟢"
+
+
+@router.callback_query(F.data == "quiz_finvozrast_start")
+async def fv_start(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Entry: start Financial Age quiz from Module 0."""
+    await callback.answer()
+    await state.clear()
+    await state.set_state(FinVozrastStates.fv_q1)
+    await state.update_data(fv_score=0)
+    _, q_text = _FV_QUESTIONS[0]
+    if callback.message:
+        await callback.message.answer(q_text, reply_markup=_fv_keyboard("fv_q1"))  # type: ignore[union-attr]
+
+
+async def _fv_process(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+    q_index: int,
+) -> None:
+    """Generic handler for one fv question."""
+    await callback.answer()
+    answered_yes = callback.data.endswith("_yes")  # type: ignore[union-attr]
+    data = await state.get_data()
+    score = data.get("fv_score", 0) + (1 if answered_yes else 0)
+
+    next_index = q_index + 1
+    if next_index < len(_FV_QUESTIONS):
+        await state.update_data(fv_score=score)
+        await state.set_state(_FV_STATE_ORDER[next_index])
+        q_id, q_text = _FV_QUESTIONS[next_index]
+        if callback.message:
+            await callback.message.answer(q_text, reply_markup=_fv_keyboard(q_id))  # type: ignore[union-attr]
+    else:
+        # All questions answered — show result
+        await state.clear()
+        badge = _fv_badge(score)
+        result_text = _FV_RESULT_TEXTS[badge]
+        done_kb = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🚀 Начинаем День 1!", callback_data="day_0_done"),
+        ]])
+        if callback.message:
+            await callback.message.answer(result_text)  # type: ignore[union-attr]
+            import asyncio
+            await asyncio.sleep(2)
+            await callback.message.answer(  # type: ignore[union-attr]
+                "Отлично! Теперь у вас есть стартовая точка. Впереди — 5 дней практики. 🎯",
+                reply_markup=done_kb,
+            )
+
+
+@router.callback_query(FinVozrastStates.fv_q1, F.data.startswith("fv_q1_"))
+async def fv_q1(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await _fv_process(callback, state, 0)
+
+
+@router.callback_query(FinVozrastStates.fv_q2, F.data.startswith("fv_q2_"))
+async def fv_q2(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await _fv_process(callback, state, 1)
+
+
+@router.callback_query(FinVozrastStates.fv_q3, F.data.startswith("fv_q3_"))
+async def fv_q3(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await _fv_process(callback, state, 2)
+
+
+@router.callback_query(FinVozrastStates.fv_q4, F.data.startswith("fv_q4_"))
+async def fv_q4(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await _fv_process(callback, state, 3)
+
+
+@router.callback_query(FinVozrastStates.fv_q5, F.data.startswith("fv_q5_"))
+async def fv_q5(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await _fv_process(callback, state, 4)
+
+
 async def _process_answer(
     callback: types.CallbackQuery,
     state: FSMContext,

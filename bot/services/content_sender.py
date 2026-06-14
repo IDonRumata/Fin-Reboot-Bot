@@ -229,6 +229,7 @@ async def send_day_block(
 
 
 DAY_GREETINGS = {
+    0: "Давайте начнём с самого важного — почему денег не хватает, хотя вы работаете 🎯",
     1: "Сегодня мы начинаем наш путь к финансовой свободе! 🚀",
     2: "Продолжаем! Сегодня - стратегия защиты денег 🛡",
     3: "Отлично, ты уже на полпути! Сегодня - криптокошелёк ₿",
@@ -245,18 +246,18 @@ async def send_full_day(
     day: int,
 ) -> None:
     """Send ONLY the first block of a day (further blocks are gated by continue-buttons)."""
-    # Personalized greeting at the start of each day
     user = await repo.get_user_by_telegram_id(session, telegram_id)
     first_name = user.first_name if user else None
     name = first_name or "друг"
     greeting = DAY_GREETINGS.get(day, "")
 
-    # Streak counter
-    streak = ""
-    if day > 1:
-        streak = f"\n🔥 <i>{day} дней подряд - отличный темп!</i>"
-
-    text = f"👋 <b>{name}, привет!</b>\n\n📅 <b>День {day}.</b> {greeting}{streak}"
+    if day == 0:
+        text = f"👋 <b>{name}!</b>\n\n{greeting}"
+    else:
+        streak = ""
+        if day > 1:
+            streak = f"\n🔥 <i>{day} дней подряд - отличный темп!</i>"
+        text = f"👋 <b>{name}, привет!</b>\n\n📅 <b>День {day}.</b> {greeting}{streak}"
     try:
         await bot.send_message(chat_id=telegram_id, text=text, parse_mode="HTML")
         await asyncio.sleep(2)

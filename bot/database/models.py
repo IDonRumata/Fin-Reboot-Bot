@@ -140,6 +140,15 @@ class UserProgress(Base):
     )
     current_day: Mapped[int] = mapped_column(Integer, default=1)
 
+    # Module 0 (intro before Day 1)
+    day_0_status: Mapped[DayStatus] = mapped_column(
+        Enum(DayStatus), default=DayStatus.not_started, server_default="not_started"
+    )
+    day_0_current_block: Mapped[int] = mapped_column(Integer, default=0)
+    day_0_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    day_0_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    day_0_reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
     # Day 1
     day_1_status: Mapped[DayStatus] = mapped_column(
         Enum(DayStatus), default=DayStatus.not_started, server_default="not_started"

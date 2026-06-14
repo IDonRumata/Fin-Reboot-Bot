@@ -10,6 +10,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from bot.core.bot_instance import create_bot, create_dispatcher
 from bot.core.config import settings
+from sqlalchemy import text
+
 from bot.database.engine import engine
 from bot.database.models import Base
 from bot.middlewares.antiflood import AntiFloodMiddleware
@@ -43,6 +45,15 @@ async def on_startup(bot, **_kwargs) -> None:
     # Create tables (in production use Alembic migrations instead)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Add day_0 columns to user_progress if they don't exist yet (safe to run repeatedly)
+        for col_sql in [
+            "ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS day_0_status VARCHAR DEFAULT 'not_started'",
+            "ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS day_0_current_block INTEGER DEFAULT 0",
+            "ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS day_0_sent_at TIMESTAMPTZ",
+            "ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS day_0_completed_at TIMESTAMPTZ",
+            "ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS day_0_reminder_sent BOOLEAN DEFAULT false",
+        ]:
+            await conn.execute(text(col_sql))
     logger.info("Database tables ensured.")
 
     # Always sync content from CSV on startup

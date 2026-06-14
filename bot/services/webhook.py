@@ -190,40 +190,17 @@ async def _activate_user(bot: Bot, telegram_id: int, transaction_id: str) -> Non
             "Спасибо за покупку «Графина»! 🎉\n\n"
             '👉 <a href="' + settings.participants_chat_url + '">Чат участников</a> '
             "— присоединяйся для общения и обратной связи\n\n"
-            "📚 Первый день программы начнётся через несколько секунд!"
-        )
-        checklist_text = (
-            "━━━━━━━━━━━━━━━━━━━\n"
-            "🎁 <b>БОНУС: Подготовься к первой инвестиции</b>\n"
-            "━━━━━━━━━━━━━━━━━━━\n\n"
-            "7 вопросов, которые стоит задать себе до начала:\n\n"
-            "1️⃣ <b>Сколько могу откладывать ежемесячно?</b>\n"
-            "Реальная сумма — не «хотелось бы». Даже 50 BYN — это старт.\n\n"
-            "2️⃣ <b>Есть ли подушка безопасности?</b>\n"
-            "3–6 месячных расходов в резерве. Инвестировать без подушки — рисковать необходимыми деньгами.\n\n"
-            "3️⃣ <b>Какая моя финансовая цель?</b>\n"
-            "Конкретная сумма и срок. «100 000 BYN через 10 лет» — план. «Хочу больше денег» — мечта.\n\n"
-            "4️⃣ <b>Готов(а) ли я к просадкам?</b>\n"
-            "Инвестиции временно падают. Продашь в панике или подождёшь? Честный ответ важен.\n\n"
-            "5️⃣ <b>На какой срок инвестирую?</b>\n"
-            "До 3 лет — инструменты одни, от 5 лет — другие. Срок определяет стратегию.\n\n"
-            "6️⃣ <b>Есть ли долги с высоким %?</b>\n"
-            "Кредит под 20% — сначала гаси его. Инвестиции редко дают больше стоимости долга.\n\n"
-            "7️⃣ <b>Зачем мне это? Мой личный «почему»</b>\n"
-            "Запиши одним предложением. В трудный момент именно это не даст бросить.\n\n"
-            "Ответы на эти вопросы разберём в курсе. Поехали! 🚀"
+            "Сейчас начнётся вводный модуль — он займёт всего 5 минут. 📚"
         )
 
         try:
             await bot.send_message(chat_id=telegram_id, text=confirm_text, disable_web_page_preview=True)
-            await asyncio.sleep(3)
-            await bot.send_message(chat_id=telegram_id, text=checklist_text)
         except Exception as exc:  # noqa: BLE001
             logger.error("Failed to notify user %s: %s", telegram_id, exc)
 
-        await asyncio.sleep(5)
-        await send_full_day(bot, session, telegram_id, user.id, day=1)
-        logger.info("Day 1 sent to user %s", telegram_id)
+        await asyncio.sleep(3)
+        await send_full_day(bot, session, telegram_id, user.id, day=0)
+        logger.info("Module 0 sent to user %s", telegram_id)
 
 
 async def handle_expresspay_webhook(request: web.Request) -> web.Response:

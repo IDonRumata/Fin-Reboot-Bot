@@ -10,7 +10,7 @@ import asyncio
 import logging
 import re
 
-from aiogram import Router, types, F
+from aiogram import Router, types, F, Bot
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.database import repositories as repo
@@ -21,6 +21,31 @@ router = Router(name="day_done")
 
 # Match day_1_done, day_2_done, ... day_5_done
 DAY_DONE_RE = re.compile(r"^day_(\d)_done$")
+
+
+@router.callback_query(F.data == "day_0_done")
+async def cb_day_0_done(callback: types.CallbackQuery, session: AsyncSession, bot: Bot) -> None:
+    """Module 0 completed — immediately start Day 1."""
+    await callback.answer("🚀 Начинаем!", cache_time=5)
+
+    if not callback.from_user:
+        return
+
+    user = await repo.get_user_by_telegram_id(session, callback.from_user.id)
+    if not user:
+        return
+
+    await repo.mark_day_completed(session, user.id, day=0)
+
+    if callback.message:
+        sep = "━━━━━━━━━━━━━━━━━━━\n📅 <b>День 1 начинается прямо сейчас!</b>\n━━━━━━━━━━━━━━━━━━━"
+        await callback.message.answer(sep, parse_mode="HTML")  # type: ignore[union-attr]
+
+    await asyncio.sleep(2)
+
+    from bot.services.content_sender import send_full_day
+    await send_full_day(bot, session, callback.from_user.id, user.id, day=1)
+    logger.info("Day 1 sent to user %s after Module 0 completion", callback.from_user.id)
 
 
 @router.callback_query(F.data.regexp(DAY_DONE_RE))
