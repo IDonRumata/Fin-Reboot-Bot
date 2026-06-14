@@ -66,6 +66,7 @@ async def main() -> None:
         format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+    logging.getLogger("aiohttp.access").setLevel(logging.WARNING)  # never log webhook URL/secret
 
     bot = create_bot()
     dp = create_dispatcher()
@@ -145,7 +146,7 @@ async def main() -> None:
 
     # Start webhook server for bePaid notifications
     webhook_app = create_webhook_app(bot)
-    runner = web.AppRunner(webhook_app)
+    runner = web.AppRunner(webhook_app, access_log=None)  # avoid logging webhook secret in URL
     await runner.setup()
     site = web.TCPSite(
         runner,
